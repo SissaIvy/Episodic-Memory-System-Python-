@@ -34,6 +34,7 @@ class FaissIndexManager:
         self.dim = dim
         self.index = faiss.IndexFlatIP(dim)
         self.ids: List[str] = []
+        self.meta_map: dict[str, dict] = {}
 
     def add_vectors(self, ids: List[str], vectors: List[List[float]], batch_size: int = 1024, sleep_ms: int = 0) -> None:
         faiss, np = _ensure_faiss()
@@ -66,7 +67,7 @@ class FaissIndexManager:
         meta_path = index_path + ".meta.json"
         faiss.write_index(self.index, index_path)
         with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump({"dim": self.dim, "ids": self.ids}, f)
+            json.dump({"dim": self.dim, "ids": self.ids, "map": self.meta_map}, f)
 
     @staticmethod
     def load(index_path: str) -> "FaissIndexManager":
@@ -76,7 +77,8 @@ class FaissIndexManager:
             meta = json.load(f)
         mgr = FaissIndexManager(dim=int(meta["dim"]))
         mgr.index = faiss.read_index(index_path)
-        mgr.ids = list(meta["ids"])  # type: ignore
+        mgr.ids = list(meta.get("ids", []))  # type: ignore
+        mgr.meta_map = dict(meta.get("map", {}))  # type: ignore
         return mgr
 
     @staticmethod
@@ -93,4 +95,3 @@ class FaissIndexManager:
             vecs.append([float(x) for x in v])
         mgr.add_vectors(ids, vecs, batch_size=batch_size, sleep_ms=sleep_ms)
         return mgr
-

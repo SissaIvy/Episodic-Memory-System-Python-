@@ -46,6 +46,39 @@ API Server
   - `POST /search` { path, query, top_k, threshold? }
   - `POST /add` { path, text, tags[], importance, reward, tone, embedder?, openai_model?, embed_dim? }
 
+ANN Index (FAISS)
+- Build from a single file:
+  - `episodic-memory index-build EpisodicMemorySystem.json index.faiss --sleep-ms 5`
+- Build from a directory of JSON files:
+  - `episodic-memory index-build --data path/to/data/ --output indexes/faiss.index --batch-size 256 --sleep-ms 50`
+ - Search with a prebuilt index:
+  - `episodic-memory index-search indexes/faiss.index "episodic" --top-k 3`
+  - Note: when indexing a directory, result IDs are `file.json::memory_id`. Snippets may be empty unless you look up the source file. Use `--data` to supply a meta file or directory for snippets.
+
+Index Search Flags & Behavior
+- `episodic-memory index-search <index> "<query>" [options]`
+
+- `--data <path>`: accepts either
+  - path to a `<index>.meta.json` file (fast); or
+  - directory root (will look for `<index>.meta.json` adjacent to the index; otherwise performs a bounded scan).
+- `--persist-meta`: when resolving snippets via a directory scan, write a normalized sidecar `<index>.meta.json` next to the index for fast future lookups.
+- `--max-scan <N>` (default `2000`): upper bound on the number of files to scan when building ephemeral metadata; avoids accidental full-corpus scans.
+- `--min-score <float>`: filter results by minimum inner-product score (useful for normalized IP indexes).
+- `--max-distance <float>`: filter results by max L2 distance (for L2 indexes).
+- `--top-k <N>`: number of nearest neighbors to retrieve.
+
+Example (persist meta after resolving snippets from a data directory):
+
+```bash
+episodic-memory index-search indexes/faiss.index "episodic" --top-k 5 --data path/to/data/ --persist-meta
+```
+
+Example (filter by minimum score with normalized IP index):
+
+```bash
+episodic-memory index-search indexes/faiss.index "episodic" --top-k 10 --min-score 0.2 --data path/to/data/
+```
+
 Embedding Backends
 - Hash (default): No dependencies, deterministic, dimension configurable.
 - OpenAI (optional): Set `OPENAI_API_KEY`, install `pip install -e .[openai]`, choose model via `--openai-model` or env `OPENAI_EMBEDDING_MODEL`.

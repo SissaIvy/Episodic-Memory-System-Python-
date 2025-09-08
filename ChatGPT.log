@@ -1,0 +1,76 @@
+[2025-09-07][20:44:44][chatgpt::app::setup][INFO] stepup
+[2025-09-07][20:44:44][chatgpt::app::setup][INFO] global_shortcut_unregister
+[2025-09-07][20:44:44][chatgpt::app::setup][INFO] stepup_tray
+[2025-09-07][20:44:44][chatgpt::app::setup][INFO] run_check_update
+[2025-09-07][20:44:44][chatgpt::app::setup][INFO] main_window: https://chat.openai.com
+[2025-09-07][20:44:44][chatgpt::utils][INFO] run_check_update: silent=false has_msg=None
+[2025-09-07][20:44:44][attohttpc][DEBUG] trying to connect to lencx.github.io:443
+[2025-09-07][20:44:44][attohttpc][DEBUG] trying to connect to [2606:50c0:8000::153]:443
+[2025-09-07][20:44:44][attohttpc][DEBUG] successfully connected to [2606:50c0:8000::153]:443, took 48ms
+[2025-09-07][20:44:44][attohttpc][DEBUG] GET /ChatGPT/install.json HTTP/1.1
+[2025-09-07][20:44:45][attohttpc][DEBUG] creating a length body reader
+[2025-09-07][20:44:45][attohttpc][DEBUG] creating plain reader
+[2025-09-07][20:44:45][attohttpc][DEBUG] status code 301
+[2025-09-07][20:44:45][attohttpc][DEBUG] redirected to https://lencx.me/ChatGPT/install.json giving url https://lencx.me/ChatGPT/install.json
+[2025-09-07][20:44:45][attohttpc][DEBUG] trying to connect to lencx.me:443
+[2025-09-07][20:44:45][attohttpc][DEBUG] trying to connect to [2606:50c0:8001::153]:443
+[2025-09-07][20:44:45][attohttpc][DEBUG] successfully connected to [2606:50c0:8001::153]:443, took 73ms
+[2025-09-07][20:44:45][attohttpc][DEBUG] GET /ChatGPT/install.json HTTP/1.1
+[2025-09-07][20:44:45][attohttpc][DEBUG] creating a length body reader
+[2025-09-07][20:44:45][attohttpc][DEBUG] creating gzip decoder
+[2025-09-07][20:44:45][attohttpc][DEBUG] status code 200
+[2025-09-07][20:44:45][chatgpt::utils][INFO] prompt_for_install
+[2025-09-07][20:47:40][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-07][20:47:40][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-07][20:48:15][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-07][20:48:15][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-07][20:51:27][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-07][20:51:27][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-07][22:26:05][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-07][22:26:05][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][11:09:46][chatgpt::app::setup][INFO] stepup
+[2025-09-08][11:09:46][chatgpt::app::setup][INFO] global_shortcut_unregister
+[2025-09-08][11:09:46][chatgpt::app::setup][INFO] run_check_update
+[2025-09-08][11:09:46][chatgpt::utils][INFO] run_check_update: silent=false has_msg=None
+[2025-09-08][11:09:46][chatgpt::app::setup][INFO] stepup_tray
+[2025-09-08][11:09:46][chatgpt::app::setup][INFO] main_window: https://chat.openai.com
+[2025-09-08][11:09:46][attohttpc][DEBUG] trying to connect to lencx.github.io:443
+[2025-09-08][11:09:47][attohttpc][DEBUG] trying to connect to [2606:50c0:8002::153]:443
+[2025-09-08][11:09:47][attohttpc][DEBUG] successfully connected to [2606:50c0:8002::153]:443, took 58ms
+[2025-09-08][11:09:47][attohttpc][DEBUG] GET /ChatGPT/install.json HTTP/1.1
+[2025-09-08][11:09:47][attohttpc][DEBUG] creating a length body reader
+[2025-09-08][11:09:47][attohttpc][DEBUG] creating plain reader
+[2025-09-08][11:09:47][attohttpc][DEBUG] status code 301
+[2025-09-08][11:09:47][attohttpc][DEBUG] redirected to https://lencx.me/ChatGPT/install.json giving url https://lencx.me/ChatGPT/install.json
+[2025-09-08][11:09:47][attohttpc][DEBUG] trying to connect to lencx.me:443
+[2025-09-08][11:09:47][attohttpc][DEBUG] trying to connect to [2606:50c0:8002::153]:443
+[2025-09-08][11:09:47][attohttpc][DEBUG] successfully connected to [2606:50c0:8002::153]:443, took 64ms
+[2025-09-08][11:09:47][attohttpc][DEBUG] GET /ChatGPT/install.json HTTP/1.1
+[2025-09-08][11:09:47][attohttpc][DEBUG] creating a length body reader
+[2025-09-08][11:09:47][attohttpc][DEBUG] creating gzip decoder
+[2025-09-08][11:09:47][attohttpc][DEBUG] status code 200
+[2025-09-08][11:09:47][chatgpt::utils][INFO] prompt_for_install
+[2025-09-08][11:31:37][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][11:31:37][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][11:50:21][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][11:50:21][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][11:55:28][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][11:55:28][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][11:59:24][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][11:59:24][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][11:59:48][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][11:59:48][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][12:01:52][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][12:01:52][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][12:05:23][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][12:05:23][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][12:07:14][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][12:07:14][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][12:39:21][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][12:39:21][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][16:48:17][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][16:48:17][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][16:49:41][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][16:49:41][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared
+[2025-09-08][16:49:43][tao::platform_impl::platform::event_loop::runner][WARN] NewEvents emitted without explicit RedrawEventsCleared
+[2025-09-08][16:49:43][tao::platform_impl::platform::event_loop::runner][WARN] RedrawEventsCleared emitted without explicit MainEventsCleared

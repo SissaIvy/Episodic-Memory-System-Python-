@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/episodic_memory.schema.json",
+  "title": "EpisodicMemorySystem",
+  "type": "object",
+  "required": ["system_metadata", "memory_entries", "indexing_structures", "integration_specifications"],
+  "properties": {
+    "system_metadata": {
+      "type": "object",
+      "required": ["version", "created_at", "updated_at", "embedding_dimension", "total_memories", "storage_path", "configuration"],
+      "properties": {
+        "version": {"type": "string"},
+        "created_at": {"type": "string"},
+        "updated_at": {"type": "string"},
+        "embedding_dimension": {"type": "integer", "minimum": 1},
+        "total_memories": {"type": "integer", "minimum": 0},
+        "storage_path": {"type": "string"},
+        "configuration": {
+          "type": "object",
+          "properties": {
+            "similarity_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+            "max_retrieval_results": {"type": "integer", "minimum": 1},
+            "auto_clustering_enabled": {"type": "boolean"},
+            "temporal_decay_factor": {"type": "number", "minimum": 0, "maximum": 1}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "governance": {
+      "type": "object",
+      "properties": {
+        "provenance_chain": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step": {"type": "string"},
+              "actor": {"type": "string"},
+              "time": {"type": "string", "format": "date-time"},
+              "hash": {"type": "string"}
+            },
+            "required": ["step", "actor", "time", "hash"],
+            "additionalProperties": false
+          }
+        },
+        "retention_policy": {
+          "type": "object",
+          "properties": {
+            "class": {"type": "string", "enum": ["critical", "normal", "ephemeral"]},
+            "review_after": {"type": "string", "format": "date-time"},
+            "decay": {"type": "string", "enum": ["linear", "log"]}
+          },
+          "required": ["class", "review_after", "decay"],
+          "additionalProperties": false
+        },
+        "access_control": {
+          "type": "object",
+          "properties": {
+            "read": {"type": "array", "items": {"type": "string"}},
+            "write": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "memory_entries": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["memory_stamp", "encoded_experience", "index_map", "integration_plan"],
+        "properties": {
+          "memory_stamp": {
+            "type": "object",
+            "required": ["timestamp", "event_id"],
+            "properties": {
+              "timestamp": {"type": "string"},
+              "event_id": {"type": "string"},
+              "location": {"type": "string"},
+              "source": {"type": "string"},
+              "signature_hash": {"type": "string"},
+              "session_id": {"type": "string"},
+              "user_id": {"type": "string"}
+            },
+            "additionalProperties": true
+          },
+          "encoded_experience": {
+            "type": "object",
+            "required": ["raw_text", "vector_embedding", "importance_score"],
+            "properties": {
+              "raw_text": {"type": "string"},
+              "vector_embedding": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "number"}
+              },
+              "reward_signal": {"type": "number"},
+              "emotional_tone": {"type": "string"},
+              "context_tags": {"type": "array", "items": {"type": "string"}},
+              "importance_score": {"type": "number", "minimum": 0, "maximum": 1},
+              "associated_emotions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["emotion", "intensity"],
+                  "properties": {
+                    "emotion": {"type": "string"},
+                    "intensity": {"type": "number", "minimum": 0, "maximum": 1}
+                  },
+                  "additionalProperties": true
+                }
+              }
+            },
+            "additionalProperties": true
+          },
+          "index_map": {
+            "type": "object",
+            "required": ["semantic_cluster_id", "time_index", "graph_node_id", "last_accessed"],
+            "properties": {
+              "semantic_cluster_id": {"type": "string"},
+              "time_index": {"type": "string"},
+              "graph_node_id": {"type": "string"},
+              "related_nodes": {"type": "array", "items": {"type": "string"}},
+              "hierarchical_path": {"type": "array", "items": {"type": "string"}},
+              "access_frequency": {"type": "integer", "minimum": 0},
+              "last_accessed": {"type": "string"}
+            },
+            "additionalProperties": true
+          },
+          "integration_plan": {
+            "type": "object",
+            "properties": {
+              "augmentation_target": {"type": "string"},
+              "confidence_score": {"type": "number", "minimum": 0, "maximum": 1},
+              "integration_notes": {"type": "string"},
+              "priority_weight": {"type": "number", "minimum": 0, "maximum": 1},
+              "staleness_factor": {"type": "number", "minimum": 0, "maximum": 1},
+              "context_relevance": {"type": "number", "minimum": 0, "maximum": 1}
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "indexing_structures": {
+      "type": "object",
+      "properties": {
+        "semantic_clusters": {"type": "object"},
+        "temporal_index": {"type": "object"},
+        "graph_connections": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "integration_specifications": {
+      "type": "object",
+      "properties": {
+        "llm_context_format": {"type": "object"},
+        "planner_input_format": {"type": "object"},
+        "rl_replay_format": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

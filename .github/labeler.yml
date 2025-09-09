@@ -1,10 +1,15 @@
 # Labeler rules: auto-apply labels to PRs based on changed files
 
-type:feature:
+"type:feature":
   - 'closed_loop_security.py'
   - 'episodic_memory/**'
 
-area:security-orchestration:
+"area:security-orchestration":
+  - 'closed_loop_security.py'
+  - 'tests/test_closed_loop.py'
+  - 'docs/Suntari_*'
+
+"area:closed-loop-security":
   - 'closed_loop_security.py'
   - 'tests/test_closed_loop.py'
   - 'docs/Suntari_*'
@@ -15,4 +20,3 @@ docs:
   - 'CHANGELOG.md'
   - 'LICENSE'
   - 'NOTICE'
-

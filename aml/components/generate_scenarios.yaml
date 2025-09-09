@@ -1,0 +1,17 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: generate_scenarios
+version: 1
+type: command
+inputs:
+  seed: {type: integer, default: 42}
+  n_events: {type: integer, default: 500}
+outputs:
+  scenarios: {type: uri_file}
+code: .
+environment: azureml:closed-loop-battletest@latest
+command: >-
+  python aml/components/generate_scenarios.py
+  --seed ${{inputs.seed}}
+  --n_events ${{inputs.n_events}}
+  --out_path ${{outputs.scenarios}}
+

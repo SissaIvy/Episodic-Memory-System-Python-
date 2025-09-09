@@ -1,0 +1,17 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: simulate_closed_loop
+version: 1
+type: command
+inputs:
+  scenarios: {type: uri_file}
+  profile: {type: string, default: "strict"}
+outputs:
+  results: {type: uri_file}
+code: .
+environment: azureml:closed-loop-battletest@latest
+command: >-
+  python aml/components/simulate_closed_loop.py
+  --scenarios ${{inputs.scenarios}}
+  --profile ${{inputs.profile}}
+  --results_json ${{outputs.results}}
+

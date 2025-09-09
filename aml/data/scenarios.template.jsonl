@@ -1,0 +1,3 @@
+{"id":"e-001","source":"sim","type":"malware_alert","severity":3,"timestamp":1736515200.0,"payload":{"host":"laptop-42","ip":"203.0.113.5"}}
+{"id":"e-002","source":"sim","type":"failed_login","severity":2,"timestamp":1736515201.0,"payload":{}}
+

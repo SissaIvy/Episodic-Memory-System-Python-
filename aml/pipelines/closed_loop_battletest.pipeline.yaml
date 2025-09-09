@@ -1,0 +1,62 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+description: Closed-loop SOC battle-test with Strict vs Exploratory and optional bandit allocation.
+experiment_name: closed_loop_battletest
+inputs:
+  seed: {type: integer, default: 42}
+  n_events: {type: integer, default: 500}
+  bandit_enable: {type: boolean, default: false}
+compute: azureml:cpu-cluster
+settings:
+  default_compute: azureml:cpu-cluster
+  continue_on_step_failure: false
+
+jobs:
+  gen:
+    type: command
+    component: azureml:generate_scenarios@latest
+    inputs:
+      seed: ${{parent.inputs.seed}}
+      n_events: ${{parent.inputs.n_events}}
+    outputs:
+      scenarios: {mode: upload}
+
+  sim_strict:
+    type: command
+    component: azureml:simulate_closed_loop@latest
+    inputs:
+      scenarios: ${{jobs.gen.outputs.scenarios}}
+      profile: "strict"
+    outputs:
+      results: {mode: upload}
+    compute: azureml:cpu-cluster
+
+  sim_explore:
+    type: command
+    component: azureml:simulate_closed_loop@latest
+    inputs:
+      scenarios: ${{jobs.gen.outputs.scenarios}}
+      profile: "explore"
+    outputs:
+      results: {mode: upload}
+    compute: azureml:cpu-cluster
+
+  eval:
+    type: command
+    component: azureml:evaluate_personas@latest
+    inputs:
+      strict_results: ${{jobs.sim_strict.outputs.results}}
+      explore_results: ${{jobs.sim_explore.outputs.results}}
+    outputs:
+      report: {mode: upload}
+
+  bandit:
+    type: command
+    component: azureml:bandit_allocator@latest
+    inputs:
+      strict_metric: ${{jobs.eval.outputs.report}}
+      explore_metric: ${{jobs.eval.outputs.report}}
+    outputs:
+      allocation: {mode: upload}
+    condition: ${{parent.inputs.bandit_enable}}
+

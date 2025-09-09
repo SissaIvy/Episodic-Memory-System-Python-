@@ -1,18 +1,35 @@
 # Labeler rules: auto-apply labels to PRs based on changed files
 
-type:feature:
-  - 'closed_loop_security.py'
-  - 'episodic_memory/**'
+type:feature":
 
-area:security-orchestration:
-  - 'closed_loop_security.py'
-  - 'tests/test_closed_loop.py'
-  - 'docs/Suntari_*'
+'closed_loop_security.py'
+'episodic_memory/**'
+"area:security-orchestration":
 
+'closed_loop_security.py'
+'tests/test_closed_loop.py'
+'docs/Suntari_*'
+"area:closed-loop-security":
+
+'closed_loop_security.py'
+'tests/test_closed_loop.py'
+'docs/Suntari_*'
 docs:
-  - 'docs/**'
-  - 'README.md'
-  - 'CHANGELOG.md'
-  - 'LICENSE'
-  - 'NOTICE'
 
+'docs/**'
+'README.md'
+'CHANGELOG.md'
+'LICENSE'
+'NOTICE'
+Important:
+
+Keys with colons are quoted ("type:feature", etc.).
+Path name is lowercase: closed_loop_security.py (not “Closed_loop_security.py”).
+Commit directly to main with message: ci(labeler): quote label keys + add area:closed-loop-security
+
+Create labels once (if missing): Issues → Labels → New label
+
+type:feature
+area:closed-loop-security
+docs
+(optional) area:security-orchestration if you still plan to use it

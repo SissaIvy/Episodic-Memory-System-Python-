@@ -1,0 +1,21 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: bandit_allocator
+version: 1
+type: command
+inputs:
+  prior_alpha: {type: number, default: 1.0}
+  prior_beta: {type: number, default: 1.0}
+  strict_metric: {type: uri_file, optional: true}
+  explore_metric: {type: uri_file, optional: true}
+outputs:
+  allocation: {type: uri_file}
+code: .
+environment: azureml:closed-loop-battletest@latest
+command: >-
+  python aml/components/bandit_allocator.py
+  --prior_alpha ${{inputs.prior_alpha}}
+  --prior_beta ${{inputs.prior_beta}}
+  --strict_metric ${{inputs.strict_metric}}
+  --explore_metric ${{inputs.explore_metric}}
+  --allocation_json ${{outputs.allocation}}
+

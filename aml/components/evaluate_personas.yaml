@@ -1,0 +1,17 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: evaluate_personas
+version: 1
+type: command
+inputs:
+  strict_results: {type: uri_file}
+  explore_results: {type: uri_file}
+outputs:
+  report: {type: uri_file}
+code: .
+environment: azureml:closed-loop-battletest@latest
+command: >-
+  python aml/components/evaluate_personas.py
+  --strict_results ${{inputs.strict_results}}
+  --explore_results ${{inputs.explore_results}}
+  --report_json ${{outputs.report}}
+

@@ -1,0 +1,13 @@
+name: closed-loop-battletest
+channels: [conda-forge, defaults]
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - azure-ai-ml==1.17.0
+      - azure-identity==1.16.0
+      - mlflow==2.13.0
+      - pandas==2.2.2
+      - numpy==1.26.4
+      - scikit-learn==1.5.1
+

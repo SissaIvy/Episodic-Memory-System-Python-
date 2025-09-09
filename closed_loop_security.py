@@ -377,6 +377,28 @@ class ClosedLoopSecuritySystem:
         self._issues: List[str] = []
         self._dry_run_default = dry_run_default
         self._version = "2025.09.09"
+        # --- Cost & token knobs (overridable via env) ---
+        self._cost_assumptions = {
+            # monthly fixed cloud costs (USD) you actually pay
+            "apim_monthly": float(os.getenv("COST_APIM_MONTHLY", "0")),
+            "function_monthly": float(os.getenv("COST_FUNCTION_MONTHLY", "0")),
+            "frontdoor_monthly": float(os.getenv("COST_FRONTDOOR_MONTHLY", "0")),
+            "appinsights_monthly": float(os.getenv("COST_APPINSIGHTS_MONTHLY", "0")),
+            "aml_monthly": float(os.getenv("COST_AML_MONTHLY", "0")),
+            # variable per-request/message estimates (USD) if you use them
+            "per_event_var": float(os.getenv("COST_PER_EVENT_VAR", "0")),
+            # expected monthly volume for blending fixed -> per-event
+            "expected_events_month": int(os.getenv("COST_EXPECTED_EVENTS_MONTH", "1000000")),
+        }
+        self._token_assumptions = {
+            # if you enable LLM assists later; set prices per 1K tokens (USD)
+            "prompt_per_1k": float(os.getenv("TOKEN_PRICE_PROMPT_PER_1K", "0")),
+            "completion_per_1k": float(os.getenv("TOKEN_PRICE_COMPLETION_PER_1K", "0")),
+            # policy: fraction of events that escalate to LLM, and avg tokens
+            "escalation_rate": float(os.getenv("TOKEN_ESCALATION_RATE", "0.0")),  # 0.0–1.0
+            "avg_prompt_tokens": int(os.getenv("TOKEN_AVG_PROMPT_TOKENS", "0")),
+            "avg_completion_tokens": int(os.getenv("TOKEN_AVG_COMPLETION_TOKENS", "0")),
+        }
 
     # ---- Ingest ----
     def ingest_event(self, raw: Dict[str, Any]) -> None:
@@ -467,13 +489,60 @@ class ClosedLoopSecuritySystem:
                     and f"Deterministically mapped {event.type}/{int(event.severity)} to '{protocol}'.",
                 }
             )
+        # ---- Cost & token accounting ----
+        counts = dict(self._metrics)
+        e = max(1, counts.get("events", 0))
+        fx = (
+            self._cost_assumptions["apim_monthly"]
+            + self._cost_assumptions["function_monthly"]
+            + self._cost_assumptions["frontdoor_monthly"]
+            + self._cost_assumptions["appinsights_monthly"]
+            + self._cost_assumptions["aml_monthly"]
+        )
+        blended_per_event = (fx / max(1, self._cost_assumptions["expected_events_month"])) + self._cost_assumptions["per_event_var"]
+        run_cloud_cost = round(blended_per_event * e, 6)
+        # token model (optional—zero if not configured)
+        esc = self._token_assumptions
+        est_escalations = e * max(0.0, min(1.0, esc["escalation_rate"]))
+        est_prompt_k = (est_escalations * esc["avg_prompt_tokens"]) / 1000.0
+        est_completion_k = (est_escalations * esc["avg_completion_tokens"]) / 1000.0
+        token_cost = round(
+            est_prompt_k * esc["prompt_per_1k"] + est_completion_k * esc["completion_per_1k"], 6
+        )
+        # ROI sketch (optional inputs via env)
+        mttr_before = float(os.getenv("ROI_MTTR_BEFORE_MIN", "0"))
+        mttr_after = float(os.getenv("ROI_MTTR_AFTER_MIN", "0"))
+        incidents_month = float(os.getenv("ROI_INCIDENTS_PER_MONTH", "0"))
+        cost_per_min = float(os.getenv("ROI_COST_PER_MINUTE_USD", "0"))
+        monthly_savings = max(0.0, (mttr_before - mttr_after)) * incidents_month * cost_per_min
+        run_cost = run_cloud_cost + token_cost
+        equity_usd = float(os.getenv("ROE_EQUITY_USD", "0"))
+        roe_annual = (12.0 * monthly_savings / equity_usd) if equity_usd > 0 else 0.0
 
         meta = {
             "generated_at_et": now_et(),
             "version": self._version,
             "profile": self.profile.name,
             "correlation_id": correlation_id,
-            "counts": dict(self._metrics),
+            "counts": counts,
+            "costs": {
+                "blended_per_event_usd": round(blended_per_event, 6),
+                "run_cloud_cost_usd": run_cloud_cost,
+                "token_cost_usd": token_cost,
+                "run_total_cost_usd": round(run_cost, 6),
+                "assumptions": self._cost_assumptions,
+            },
+            "roi": {
+                "monthly_savings_usd": round(monthly_savings, 2),
+                "roe_annual_estimate": round(roe_annual, 2),
+                "assumptions": {
+                    "mttr_before_min": mttr_before,
+                    "mttr_after_min": mttr_after,
+                    "incidents_month": incidents_month,
+                    "cost_per_min_usd": cost_per_min,
+                    "equity_usd": equity_usd,
+                },
+            },
             "issues": self._issues,
         }
         return {"meta": meta, "insights": insights}

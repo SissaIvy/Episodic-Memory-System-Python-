@@ -1,0 +1,183 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PR: Update title/body/labels (active branch)",
+      "type": "shell",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "options": { "cwd": "${workspaceFolder}" },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\nBR=\"${input:branch}\";\nPR=$(gh pr list --head \"$BR\" --json number --jq '.[0].number');\necho \"PR #$PR\";\ngh pr edit \"$PR\" --base \"${input:baseBranch}\" --title \"feat(closed-loop): security orchestrator + tests/docs; AML battle-test + CI; cost/ROI knobs; submit-time gates\" --body-file pr_body.md;\nIFS=',' read -ra LBL <<< \"${input:labels}\";\nfor l in \"${LBL[@]}\"; do gh pr edit \"$PR\" --add-label \"$l\"; done;\ngh pr view \"$PR\" --web;"
+        ]
+      },
+      "osx": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\nBR=\"${input:branch}\";\nPR=$(gh pr list --head \"$BR\" --json number --jq '.[0].number');\necho \"PR #$PR\";\ngh pr edit \"$PR\" --base \"${input:baseBranch}\" --title \"feat(closed-loop): security orchestrator + tests/docs; AML battle-test + CI; cost/ROI knobs; submit-time gates\" --body-file pr_body.md;\nIFS=',' read -ra LBL <<< \"${input:labels}\";\nfor l in \"${LBL[@]}\"; do gh pr edit \"$PR\" --add-label \"$l\"; done;\ngh pr view \"$PR\" --web;"
+        ]
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "$ErrorActionPreference = 'Stop'; $BR = \"${input:branch}\"; $PR = gh pr list --head $BR --json number --jq '.[0].number'; Write-Host \"PR #$PR\"; gh pr edit $PR --base \"${input:baseBranch}\" --title \"feat(closed-loop): security orchestrator + tests/docs; AML battle-test + CI; cost/ROI knobs; submit-time gates\" --body-file pr_body.md; $labels = \"${input:labels}\".Split(','); foreach ($l in $labels) { gh pr edit $PR --add-label $l.Trim() }; gh pr view $PR --web;"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "PR: Checks summary",
+      "type": "shell",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "options": { "cwd": "${workspaceFolder}" },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\nBR=\"${input:branch}\";\nPR=$(gh pr list --head \"$BR\" --json number --jq '.[0].number');\necho \"PR #$PR\";\ngh pr checks \"$PR\";\ngh pr view \"$PR\" --json mergeableState,checkSuites --jq '.';"
+        ]
+      },
+      "osx": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\nBR=\"${input:branch}\";\nPR=$(gh pr list --head \"$BR\" --json number --jq '.[0].number');\necho \"PR #$PR\";\ngh pr checks \"$PR\";\ngh pr view \"$PR\" --json mergeableState,checkSuites --jq '.';"
+        ]
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "$ErrorActionPreference='Stop'; $BR='${input:branch}'; $PR = gh pr list --head $BR --json number --jq '.[0].number'; Write-Host \"PR #$PR\"; gh pr checks $PR; gh pr view $PR --json mergeableState,checkSuites --jq '.';"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Branch: Rebase feature onto main",
+      "type": "shell",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "options": { "cwd": "${workspaceFolder}" },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\ngit fetch origin;\ngit checkout \"${input:branch}\";\ngit rebase origin/${input:baseBranch};\ngit push --force-with-lease origin \"${input:branch}\";"
+        ]
+      },
+      "osx": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\ngit fetch origin;\ngit checkout \"${input:branch}\";\ngit rebase origin/${input:baseBranch};\ngit push --force-with-lease origin \"${input:branch}\";"
+        ]
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "$ErrorActionPreference='Stop'; git fetch origin; git checkout \"${input:branch}\"; git rebase origin/${input:baseBranch}; git push --force-with-lease origin \"${input:branch}\";"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "PR: Squash-merge and delete branch",
+      "type": "shell",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "options": { "cwd": "${workspaceFolder}" },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\nBR=\"${input:branch}\";\nPR=$(gh pr list --head \"$BR\" --json number --jq '.[0].number');\necho \"Merging PR #$PR\";\ngh pr merge \"$PR\" --squash --delete-branch --body-file pr_body.md;"
+        ]
+      },
+      "osx": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\nBR=\"${input:branch}\";\nPR=$(gh pr list --head \"$BR\" --json number --jq '.[0].number');\necho \"Merging PR #$PR\";\ngh pr merge \"$PR\" --squash --delete-branch --body-file pr_body.md;"
+        ]
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "$ErrorActionPreference='Stop'; $BR='${input:branch}'; $PR = gh pr list --head $BR --json number --jq '.[0].number'; Write-Host \"Merging PR #$PR\"; gh pr merge $PR --squash --delete-branch --body-file pr_body.md;"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Release: Tag and push (v0.2.x)",
+      "type": "shell",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "options": { "cwd": "${workspaceFolder}" },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\ngit checkout ${input:baseBranch};\ngit pull origin ${input:baseBranch};\ngit tag -a ${input:tagVersion} -m \"${input:tagMessage}\";\ngit push origin ${input:tagVersion};"
+        ]
+      },
+      "osx": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "set -euo pipefail\ngit checkout ${input:baseBranch};\ngit pull origin ${input:baseBranch};\ngit tag -a ${input:tagVersion} -m \"${input:tagMessage}\";\ngit push origin ${input:tagVersion};"
+        ]
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "$ErrorActionPreference='Stop'; git checkout ${input:baseBranch}; git pull origin ${input:baseBranch}; git tag -a ${input:tagVersion} -m \"${input:tagMessage}\"; git push origin ${input:tagVersion};"
+        ]
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "branch",
+      "description": "Enter the feature branch name",
+      "type": "promptString",
+      "default": "feat/faiss-smoke-tests"
+    },
+    {
+      "id": "baseBranch",
+      "description": "Enter the base branch",
+      "type": "promptString",
+      "default": "main"
+    },
+    {
+      "id": "labels",
+      "description": "Enter comma-separated labels to add",
+      "type": "promptString",
+      "default": "type:feature,area:security-orchestration,docs"
+    },
+    {
+      "id": "tagVersion",
+      "description": "Enter tag to create and push",
+      "type": "promptString",
+      "default": "v0.2.2"
+    },
+    {
+      "id": "tagMessage",
+      "description": "Enter tag message",
+      "type": "promptString",
+      "default": "v0.2.2 — Closed-loop security orchestration, AML battle-test, CI guardrails, cost/ROI knobs, submit-time gates"
+    }
+  ]
+}
+

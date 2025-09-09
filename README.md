@@ -1,5 +1,7 @@
 Episodic Memory System (Python)
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Overview
 - Robust loader that extracts the last valid JSON object from files that may contain extra fragments.
 - Typed, dependency-free models and a `MemoryStore` API to add, save, and search memories.

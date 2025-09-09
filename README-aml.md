@@ -100,17 +100,40 @@ az ml job create --file aml/pipelines/closed_loop_battletest.pipeline.yaml \
         jobs.sim_strict.environment_variables.ROI_COST_PER_MINUTE_USD=100
 ```
 
-### Tuning the budget gate
-The evaluator enforces `max_cost_per_event_usd` (default `$0.001`). To change it, update the constant in `aml/components/evaluate_personas.py` and commit:
-```python
-gates = {
-  "fail_rate_strict_max": 0.10,
-  "fail_rate_explore_max": 0.15,
-  "explainability_min": 0.95,
-  "max_cost_per_event_usd": 0.001  # <-- adjust here
-}
+### Submit‑time gates (evaluator thresholds)
+You can now tune evaluator gates at submit‑time (defaults preserve current behavior):
+
+- `max_cost_per_event_usd` (default `0.001`)
+- `max_token_cost_usd` (default very high/off)
+- `explainability_min` (default `0.95`)
+- `fail_rate_strict_max` (default `0.10`)
+- `fail_rate_explore_max` (default `0.15`)
+
+Local evaluator example:
+```bash
+python aml/components/evaluate_personas.py \
+  --strict_results /tmp/strict.json \
+  --explore_results /tmp/explore.json \
+  --report_json /tmp/report.json \
+  --max-cost-per-event-usd 0.0008 \
+  --max-token-cost-usd 0.05 \
+  --explainability-min 0.97 \
+  --fail-rate-strict-max 0.08 \
+  --fail-rate-explore-max 0.12
 ```
-Tip: if you prefer this tunable at submit‑time, we can add a CLI arg or env to the evaluator and plumb it through.
+
+Azure ML submit with pipeline‑level inputs:
+```bash
+az ml job create --file aml/pipelines/closed_loop_battletest.pipeline.yaml \
+  --set inputs.max_cost_per_event_usd=0.0008 \
+        inputs.max_token_cost_usd=0.05 \
+        inputs.explainability_min=0.97 \
+        inputs.fail_rate_strict_max=0.08 \
+        inputs.fail_rate_explore_max=0.12
+```
+
+Env fallback (if CLI flags omitted when running evaluator directly):
+- `EVAL_MAX_COST_PER_EVENT_USD`, `EVAL_MAX_TOKEN_COST_USD`, `EVAL_EXPLAINABILITY_MIN`, `EVAL_FAIL_RATE_STRICT_MAX`, `EVAL_FAIL_RATE_EXPLORE_MAX`
 
 ## Gates and decisions
 

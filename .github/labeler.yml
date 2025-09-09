@@ -1,35 +1,54 @@
 # Labeler rules: auto-apply labels to PRs based on changed files
 
-type:feature":
+# MIGRATION: console script alias -> `closed-loop-security`
 
-'closed_loop_security.py'
-'episodic_memory/**'
-"area:security-orchestration":
+This change adds a new console script alias: `closed-loop-security` which points to
+the same CLI entrypoint as the existing `episodic-memory` script. We keep the
+existing `episodic-memory` script as a shim for backward compatibility for at
+least one release cycle.
 
-'closed_loop_security.py'
-'tests/test_closed_loop.py'
-'docs/Suntari_*'
-"area:closed-loop-security":
+## Why
+- Provide a clearer, brand-aligned binary name without immediately breaking users.
 
-'closed_loop_security.py'
-'tests/test_closed_loop.py'
-'docs/Suntari_*'
-docs:
+## What changed
+- Added `closed-loop-security = "memory_cli:main"` to `[project.scripts]`
+  in `pyproject.toml`. The old `episodic-memory` entry remains.
 
-'docs/**'
-'README.md'
-'CHANGELOG.md'
-'LICENSE'
-'NOTICE'
-Important:
+## How to test locally
+1. Install editable package and list console scripts:
+   ```bash
+   pip install -e .
+   python - <<'PY'
+from importlib.metadata import entry_points
+try:
+    eps = entry_points().select(group="console_scripts")
+    names = [e.name for e in eps]
+except Exception:
+    eps = entry_points()
+    names = [e.name for e in eps.get("console_scripts", [])]
+print("console_scripts:", sorted(names))
+PY
+   ```
+   You should see both `episodic-memory` and `closed-loop-security`.
 
-Keys with colons are quoted ("type:feature", etc.).
-Path name is lowercase: closed_loop_security.py (not “Closed_loop_security.py”).
-Commit directly to main with message: ci(labeler): quote label keys + add area:closed-loop-security
+2. Try the two help outputs:
+   ```bash
+   closed-loop-security --help
+   episodic-memory --help
+   ```
 
-Create labels once (if missing): Issues → Labels → New label
+3. Run unit tests:
+   ```bash
+   python -m unittest discover -s tests -p "test_*.py" -v
+   ```
 
-type:feature
-area:closed-loop-security
-docs
-(optional) area:security-orchestration if you still plan to use it
+## Deprecation plan
+- Keep the shim for one release cycle. Mark `episodic-memory` as deprecated in the next minor release notes
+  and remove it in a future breaking release (documented in CHANGELOG).
+
+## Rollback
+- Revert the commit that adds the new script and republish:
+  ```bash
+  git revert <commit-sha>
+  git push origin main
+  ```

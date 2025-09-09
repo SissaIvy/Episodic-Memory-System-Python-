@@ -1,5 +1,9 @@
 # Global owners (fallback)
+main
 @SuntariComicsLLC/platform-core @SuntariComicsLLC/secops
+
+*       @SuntariComicsLLC/platform-core @SuntariComicsLLC/secops
+ feat/faiss-smoke-tests
 
 # Python security orchestration
 /closed_loop_security.py   @SuntariComicsLLC/secops @SuntariComicsLLC/ml-ops

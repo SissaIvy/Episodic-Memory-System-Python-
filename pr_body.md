@@ -46,7 +46,7 @@ This is primarily orchestration, CI and documentation + safety guardrails. No br
 ## CI notes
 - Normal unit tests run on PRs as before.
 - Heavy smoke jobs run on Ubuntu/Py3.11 runners and are path-scoped to avoid extra cost.
-- Labeler auto-applies `type:feature`, `area:security-orchestration`, `docs` when relevant files change.
+- Labeler auto-applies `type:feature`, `area:closed-loop-security`, `docs` when relevant files change.
 
 ## Merge & Release plan
 - Merge: Squash & merge after CI green and review approvals.
@@ -67,4 +67,4 @@ Reviewer checklist (copy for PR)
 
 Suggested reviewers & labels
 - Reviewers: infra/CI owner, security-owner, embeddings/FAISS owner
-- Labels: type:feature, area:security-orchestration, docs, ci
+- Labels: type:feature, area:closed-loop-security, docs, ci

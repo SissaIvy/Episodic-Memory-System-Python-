@@ -1,5 +1,3 @@
-# Labeler rules: auto-apply labels to PRs based on changed files
-
 # MIGRATION: console script alias -> `closed-loop-security`
 
 This change adds a new console script alias: `closed-loop-security` which points to

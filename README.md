@@ -142,3 +142,20 @@ export COST_APIM_MONTHLY=60 COST_EXPECTED_EVENTS_MONTH=100000
 python closed_loop_security.py --profile strict --events events.json
 ```
 Inspect `meta.costs` and `meta.roi` in the output for per‑run budgets and savings.
+
+### SISSA PitCrew — Live Status
+
+![status](badges/status.svg) ![kpi](badges/kpi.svg) ![xai](badges/xai.svg) ![failrate](badges/failrate.svg)
+
+![metrics](badges/metrics.svg)
+
+<details>
+<summary>More visuals</summary>
+
+![pit lanes](badges/metrics_pitlanes.svg)
+
+![redline stacks](badges/metrics_stacks.svg)
+
+![telemetry bars](badges/metrics_telemetry.svg)
+
+</details>

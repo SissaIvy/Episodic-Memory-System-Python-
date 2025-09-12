@@ -6,9 +6,9 @@ concurrency:
 
 on:
   push:
-    branches: [ "main", "develop", "feature/**" ]
+    branches: [ "pitcrew-main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "pitcrew-main" ]
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -137,8 +137,8 @@ jobs:
           echo "Evaluator decision is HOLD - failing the job."
           exit 1
 
-      - name: Commit badges & KPI JSON on main
-        if: github.ref == 'refs/heads/main'
+      - name: Commit badges & KPI JSON on pitcrew-main
+        if: github.ref == 'refs/heads/pitcrew-main'
         run: |
           git config user.name  "sissa-pitcrew[bot]"
           git config user.email "actions@github.com"

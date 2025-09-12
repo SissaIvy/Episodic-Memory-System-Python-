@@ -26,4 +26,4 @@ Nightly and on every PR, PitCrew runs the offline battle‑test (scenarios → s
 #### Live Dashboard
 
 - View online (GitHub Pages): https://sissaivy.github.io/sissa_ivy/
-- Source: `ui/pitcrew-dashboard` (Vite + React). The Pages site auto-publishes on pushes to `pitcrew-main` and also after the "PitCrew KPI" workflow completes successfully on `pitcrew-main`.
+- Source: `ui/pitcrew-dashboard` (Vite + React). The Pages site auto-publishes on pushes to `pitcrew-main` or `main`, and also after the "PitCrew KPI" workflow completes successfully on those branches.

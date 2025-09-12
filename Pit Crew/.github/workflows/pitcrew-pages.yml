@@ -2,7 +2,7 @@ name: PitCrew Dashboard (Pages)
 
 on:
   push:
-    branches: [ "pitcrew-main" ]
+    branches: [ "pitcrew-main", "main" ]
     paths:
       - 'ui/pitcrew-dashboard/**'
       - '.github/workflows/pitcrew-pages.yml'
@@ -23,7 +23,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'pitcrew-main')
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'pitcrew-main' || github.event.workflow_run.head_branch == 'main'))
     steps:
       - name: Checkout
         uses: actions/checkout@v4

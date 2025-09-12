@@ -2,9 +2,9 @@ name: PitCrew UI Self-Test
 
 on:
   push:
-    branches: [ "pitcrew-main" ]
+    branches: [ "pitcrew-main", "main" ]
   pull_request:
-    branches: [ "pitcrew-main" ]
+    branches: [ "pitcrew-main", "main" ]
   workflow_dispatch:
 
 jobs:

@@ -1,0 +1,1 @@
+      <g transform={`translate(${width-30},${margin.t-10})`}><circle cx={10} cy={10} r={9} fill={data.decision==="PASS"?PAL.pass:PAL.hold}/><text x={10} y={11} fill="#fff" fontSize={12} textAnchor="middle">{data.decision==="PASS"?"✓":"!"}</text></g>

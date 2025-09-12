@@ -1,0 +1,12 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='420' height='160' role='img' aria-label='PitCrew — Telemetry Bars'><rect width='420' height='160' fill='#0D1117'/>
+    <defs>
+      <pattern id="expHatch-tele" patternUnits="userSpaceOnUse" width="6" height="6"
+               patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#F59E0B" stroke-width="2" stroke-opacity="0.6"/>
+      </pattern>
+      <pattern id="checkers-tele" width="6" height="6" patternUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="3" height="3" fill="#fff"/><rect x="3" y="3" width="3" height="3" fill="#fff"/>
+        <rect x="3" y="0" width="3" height="3" fill="#000"/><rect x="0" y="3" width="3" height="3" fill="#000"/>
+      </pattern>
+    </defs>
+    <text x='90.0' y='20.0' fill='#E5E7EB' font-size='12' font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif' text-anchor='start' dominant-baseline='middle'>Telemetry — explainability</text><line x1='356.0' y1='28.0' x2='356.0' y2='146.0' stroke='#EF4444' stroke-dasharray='4,3' stroke-width='2'/><path d='M90,54 L90,41 L93,38 L358.968,38 L358.968,54 Z' fill='#2563EB' opacity='0.95'/><rect x='349.0' y='38.0' width='10' height='16.0' fill='url(#checkers-tele)'/><text x='80.0' y='46.0' fill='#E5E7EB' font-size='12' font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif' text-anchor='end' dominant-baseline='middle'>strict</text><text x='365.0' y='46.0' fill='#E5E7EB' font-size='10' font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif' text-anchor='start' dominant-baseline='middle'>96.1%</text><path d='M90,92 L90,79 L93,76 L341.664,76 L341.664,92 Z' fill='#F59E0B' opacity='0.95'/><rect x='90.0' y='76.0' width='251.7' height='16.0' fill='url(#expHatch-tele)' opacity='0.9'/><text x='80.0' y='84.0' fill='#E5E7EB' font-size='12' font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif' text-anchor='end' dominant-baseline='middle'>explore</text><text x='347.7' y='84.0' fill='#E5E7EB' font-size='10' font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif' text-anchor='start' dominant-baseline='middle'>89.9%</text></svg>

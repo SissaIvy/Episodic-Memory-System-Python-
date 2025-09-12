@@ -295,6 +295,8 @@ def main():
     ap.add_argument("--weight_rel", type=float, default=0.75)
     ap.add_argument("--weight_xai", type=float, default=0.25)
     ap.add_argument("--fr_gate", type=float, default=0.10)
+    ap.add_argument("--fr_gate_strict", type=float, default=None)
+    ap.add_argument("--fr_gate_explore", type=float, default=None)
     ap.add_argument("--xai_gate", type=float, default=0.95)  # default matches eval gate
     ap.add_argument("--k_shape", type=float, default=12.0)
     args = ap.parse_args()
@@ -307,9 +309,15 @@ def main():
     explore = rpt.get("explore", {})
     decision = rpt.get("decision", "HOLD")
     et = rpt.get("evaluated_at_et", datetime.utcnow().isoformat()+"Z")
+    gates = rpt.get("gates", {})
+
+    # Effective gates: prefer report-provided gates when available; allow CLI override
+    fr_gate_s = args.fr_gate_strict if args.fr_gate_strict is not None else gates.get("fail_rate_strict_max", args.fr_gate)
+    fr_gate_e = args.fr_gate_explore if args.fr_gate_explore is not None else gates.get("fail_rate_explore_max", args.fr_gate)
+    xai_gate = gates.get("explainability_min", args.xai_gate)
 
     kpi_args = dict(weight_rel=args.weight_rel, weight_xai=args.weight_xai,
-                    fr_gate=args.fr_gate, xai_gate=args.xai_gate, k_shape=args.k_shape)
+                    fr_gate=max(fr_gate_s, fr_gate_e), xai_gate=xai_gate, k_shape=args.k_shape)
     kpi_s = _kpi_from_metrics(strict, **kpi_args)
     kpi_e = _kpi_from_metrics(explore, **kpi_args)
     # blend
@@ -346,14 +354,15 @@ def main():
                  _color_scale(100 * (1 - (fr_s + fr_e)/2.0)))
 
     # Visuals — Pit Lanes (grouped), Redline Stacks, Telemetry
-    pit = _pit_lanes_svg(kpi_s, kpi_e, fr_s, fr_e, ex_s, ex_e, args.fr_gate, args.xai_gate, decision=decision)
+    pit = _pit_lanes_svg(kpi_s, kpi_e, fr_s, fr_e, ex_s, ex_e, max(fr_gate_s, fr_gate_e), xai_gate, decision=decision)
     (out_dir / "metrics_pitlanes.svg").write_text(pit, encoding="utf-8")
     (badges_dir / "metrics_pitlanes.svg").write_text(pit, encoding="utf-8")
     # Back-compat alias
     (out_dir / "metrics.svg").write_text(pit, encoding="utf-8")
     (badges_dir / "metrics.svg").write_text(pit, encoding="utf-8")
 
-    stacks = _redline_stacks_svg(fr_s, fr_e, args.fr_gate, decision=decision)
+    # Use the effective failure-rate gate shown elsewhere (min of S/E)
+    stacks = _redline_stacks_svg(fr_s, fr_e, min(fr_gate_s, fr_gate_e), decision=decision)
     (out_dir / "metrics_stacks.svg").write_text(stacks, encoding="utf-8")
     (badges_dir / "metrics_stacks.svg").write_text(stacks, encoding="utf-8")
 
@@ -366,6 +375,9 @@ def main():
     md.append(f"### PitCrew — Mechanic Summary\n")
     md.append(f"- **Decision:** `{decision}`  \n")
     md.append(f"- **Evaluated at (ET):** {et}\n")
+    if "mock" in rpt:
+        mk = rpt["mock"]
+        md.append(f"- **Mode:** mock (seed={mk.get('seed','?')}, rho={mk.get('rho','?')}, fr_sd={mk.get('fr_sd','?')}, xai_sd={mk.get('xai_sd','?')})\n")
     md.append("")
     md.append("| Profile | KPI | Failure Rate | Explainability | Events | Actions |")
     md.append("|---|---:|---:|---:|---:|---:|")

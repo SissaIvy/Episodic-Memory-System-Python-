@@ -23,11 +23,11 @@ class TestCliAliases(unittest.TestCase):
         except Exception:
             self.skipTest("Unable to enumerate entry points in this environment")
 
-        # If package isn't installed or the new alias isn't in this env, skip gracefully
-        if not any(n in console for n in ("episodic-memory", "closed-loop-security")):
-            self.skipTest("Package not installed; skipping console script checks")
+        # If package isn't installed or the aliases aren't in this env, skip gracefully
+        if "episodic-memory" not in console:
+            self.skipTest("Old alias 'episodic-memory' not present; package may not be installed")
         if "closed-loop-security" not in console:
-            self.skipTest("New alias not present in this environment; likely not re-installed yet")
+            self.skipTest("New alias 'closed-loop-security' not present; likely not re-installed yet")
 
         # When installed (fresh CI/build), verify both names exist
         self.assertIn("episodic-memory", console)

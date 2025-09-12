@@ -263,7 +263,18 @@ const FileLoader = ({ onLoaded }) => {
       <button className="px-3 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-neutral-900" onClick={()=>inputRef.current?.click()}>Load JSON</button>
       <input ref={inputRef} type="file" accept="application/json" hidden onChange={(e)=>{
         const f = e.target.files?.[0]; if(!f) return;
-        const r = new FileReader(); r.onload = ()=>{ try{ onLoaded(normalize(JSON.parse(String(r.result)))); }catch{ alert("Invalid JSON"); } }; r.readAsText(f);
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            const text = String(r.result);
+            const json = JSON.parse(text);
+            const normalized = normalize(json);
+            onLoaded(normalized);
+          } catch (err) {
+            alert("Invalid JSON: " + (err && err.message ? err.message : err));
+          }
+        };
+        r.readAsText(f);
       }}/>
       <span className="text-xs text-neutral-500">Drop in <code>mech_out/mechanic_kpi.json</code></span>
     </div>

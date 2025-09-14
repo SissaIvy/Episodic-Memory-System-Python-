@@ -457,8 +457,8 @@ def cmd_index_search(args: argparse.Namespace) -> int:
             try:
                 py_score = float(score)
             except Exception:
-                py_score = score  # fallback; json.dumps will error if not serializable
-            out.append({"id": mid, "score": float(round(py_score, 6)), "snippet": snippet})
+                py_score = None  # fallback to None if not convertible to float
+            out.append({"id": mid, "score": round(py_score, 6) if isinstance(py_score, float) else py_score, "snippet": snippet})
         print(json.dumps(out, indent=2))
     else:
         for mid, score in hits:

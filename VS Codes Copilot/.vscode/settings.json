@@ -1,0 +1,15 @@
+{
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "chat.promptFiles": true,
+  "chat.promptFilesLocations": [".github/prompts"],
+  "chat.modeFilesLocations": [".github/chatmodes"],
+  "chat.instructionsFilesLocations": [".github/instructions"],
+  "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+    { "file": ".github/guidance/pr-guidelines.md" }
+  ],
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    { "file": ".github/guidance/commit-message-guidelines.md" }
+  ],
+  "chat.mcp.access": "all",
+  "chat.mcp.autostart": "newAndOutdated"
+}

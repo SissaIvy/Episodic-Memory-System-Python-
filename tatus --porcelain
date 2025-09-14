@@ -1,0 +1,7 @@
+[33mcommit 0f9352296d819bd5de7aa5b1ed77fe9d344ac4fc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/faiss-smoke-tests[m[33m)[m
+Author: CI Bot <ci@example.com>
+Date:   Tue Sep 9 14:51:39 2025 -0400
+
+    chore(cli): print deprecation warning when invoked as 'episodic-memory' (guides users to 'closed-loop-security')
+
+memory_cli.py

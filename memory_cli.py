@@ -453,7 +453,12 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                     if args.persist_meta and snippet:
                         mgr.meta_map[mid] = {"source": src, "snippet": snippet}
                         updated_meta = True
-            out.append({"id": mid, "score": round(score, 6), "snippet": snippet})
+            # Ensure JSON-serializable native types for scores
+            try:
+                py_score = float(score)
+            except Exception:
+                py_score = None  # fallback to None if not convertible to float
+            out.append({"id": mid, "score": round(py_score, 6) if isinstance(py_score, float) else py_score, "snippet": snippet})
         print(json.dumps(out, indent=2))
     else:
         for mid, score in hits:

@@ -1,0 +1,45 @@
+name: PitCrew UI Self-Test
+
+on:
+  push:
+    branches: [ "pitcrew-main", "main" ]
+  pull_request:
+    branches: [ "pitcrew-main", "main" ]
+  workflow_dispatch:
+
+jobs:
+  ui-selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Produce PASS report via mock
+        run: |
+          python ops/mechanic/mock_battletest.py \
+            --out aml_out/report.json --events 200 \
+            --fr_gate_strict 0.05 --fr_gate_explore 0.05 --xai_gate 0.95 \
+            --fr_s_mean 0.020 --fr_e_mean 0.035 --xai_s_mean 0.970 --xai_e_mean 0.960 \
+            --fr_sd 0.010 --xai_sd 0.020 --rho -0.55 --seed 42
+
+      - name: Build KPIs (for dashboard)
+        run: |
+          python ops/mechanic/kpi_collect.py \
+            --report aml_out/report.json --fr_gate 0.05 --xai_gate 0.95
+
+      - name: Run dashboard self-test
+        run: |
+          python ui/pitcrew-dashboard/selftest.py mech_out/mechanic_kpi.json
+
+      - name: Upload UI self-test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitcrew-ui-selftest
+          path: |
+            aml_out/report.json
+            mech_out/mechanic_kpi.json

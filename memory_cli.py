@@ -582,8 +582,11 @@ def main(argv: list[str] | None = None) -> int:
                 "Use 'closed-loop-security' going forward. This alias will be removed in a future release.",
                 file=sys.stderr,
             )
-    except Exception:  # pragma: no cover
+    except (IndexError, AttributeError, TypeError):
+        # Could not determine invocation name; skip deprecation warning
         pass
+    except Exception as e:
+        print(f"Unexpected error while checking invocation name: {e}", file=sys.stderr)
 
     p = build_parser()
     args = p.parse_args(argv)

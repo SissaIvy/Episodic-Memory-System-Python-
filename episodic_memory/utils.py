@@ -65,7 +65,7 @@ def extract_last_json_object(text: str) -> Any:
 
 def extract_preamble_fields(text: str) -> Dict[str, Any]:
     """Best-effort extraction of top-level preamble objects like governance before the main JSON object.
-    This scans for patterns like '"governance"\s*:\s*{...}' and returns parsed dicts.
+    This scans for patterns like '"governance"\\s*:\\s*{...}' and returns parsed dicts.
     """
     out: Dict[str, Any] = {}
     # naive search for governance

@@ -1,0 +1,32 @@
+{
+  "evaluated_at_et": "2025-09-10T15:11:53.159706Z",
+  "strict": {
+    "events": 200,
+    "actions": 220,
+    "failure_rate": 0.0187,
+    "avg_severity": 2.3,
+    "explainability_rate": 0.9606
+  },
+  "explore": {
+    "events": 200,
+    "actions": 208,
+    "failure_rate": 0.0389,
+    "avg_severity": 2.1,
+    "explainability_rate": 0.8988
+  },
+  "gates": {
+    "fail_rate_strict_max": 0.05,
+    "fail_rate_explore_max": 0.05,
+    "explainability_min": 0.95
+  },
+  "decision": "HOLD",
+  "issues": [
+    "Explainability below threshold"
+  ],
+  "mock": {
+    "seed": 7,
+    "rho": -0.6,
+    "fr_sd": 0.005,
+    "xai_sd": 0.01
+  }
+}

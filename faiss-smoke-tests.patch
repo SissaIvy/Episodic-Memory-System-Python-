@@ -1,0 +1,1335 @@
+From 1915565b1d7cdba396c64af4e172f7fe0f2a8d3d Mon Sep 17 00:00:00 2001
+From: CI Bot <ci@example.com>
+Date: Mon, 8 Sep 2025 19:43:00 -0400
+Subject: [PATCH] feat(ci,tests,docs): FAISS smoke tests, meta persistence,
+ README flags & index-search options
+
+---
+ .github/workflows/ci.yml                      |  21 ++
+ .github/workflows/release.yml                 |  37 ++
+ CHANGELOG.md                                  |  48 +++
+ README.md                                     |  33 ++
+ __pycache__/memory_cli.cpython-311.pyc        | Bin 17648 -> 36224 bytes
+ .../__pycache__/faiss_index.cpython-311.pyc   | Bin 7069 -> 7318 bytes
+ episodic_memory/faiss_index.py                |   7 +-
+ memory_cli.py                                 | 333 +++++++++++++++++-
+ .../test_faiss_cli_meta.cpython-311.pyc       | Bin 0 -> 3192 bytes
+ .../test_persist_meta_e2e.cpython-311.pyc     | Bin 0 -> 4884 bytes
+ tests/test_faiss_cli_meta.py                  |  65 ++++
+ tests/test_persist_meta_e2e.py                |  93 +++++
+ workspace.schema.yml                          |   8 +
+ 13 files changed, 629 insertions(+), 16 deletions(-)
+ create mode 100644 .github/workflows/release.yml
+ create mode 100644 CHANGELOG.md
+ create mode 100644 tests/__pycache__/test_faiss_cli_meta.cpython-311.pyc
+ create mode 100644 tests/__pycache__/test_persist_meta_e2e.cpython-311.pyc
+ create mode 100644 tests/test_faiss_cli_meta.py
+ create mode 100644 tests/test_persist_meta_e2e.py
+ create mode 100644 workspace.schema.yml
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 7162343..caece70 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -39,3 +39,24 @@ jobs:
+         run: |
+           python -m unittest discover -s tests -p 'test_*.py' -v
+ 
++  smoke-faiss:
++    name: Smoke (FAISS + NumPy) Python 3.11
++    runs-on: ubuntu-latest
++    steps:
++      - name: Checkout
++        uses: actions/checkout@v4
++
++      - name: Set up Python
++        uses: actions/setup-python@v5
++        with:
++          python-version: '3.11'
++
++      - name: Install extras
++        run: |
++          python -m pip install --upgrade pip
++          python -m pip install -e .[faiss]
++          python -m pip install numpy pytest
++
++      - name: Run smoke tests (pytest)
++        run: |
++          python -m pytest -q tests/test_faiss_cli_meta.py tests/test_persist_meta_e2e.py
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+new file mode 100644
+index 0000000..f195bfc
+--- /dev/null
++++ b/.github/workflows/release.yml
+@@ -0,0 +1,37 @@
++name: Release
++
++on:
++  push:
++    tags:
++      - 'v*'
++
++jobs:
++  github-release:
++    runs-on: ubuntu-latest
++    steps:
++      - name: Checkout
++        uses: actions/checkout@v4
++
++      - name: Extract notes for tag
++        id: notes
++        shell: bash
++        run: |
++          TAG="${GITHUB_REF_NAME}"
++          awk -v tag="${TAG}" '
++            BEGIN {found=0}
++            $0 ~ "^##[[:space:]]+" tag {found=1}
++            found && NR>1 && $0 ~ /^##[[:space:]]+/ {exit}
++            found {print}
++          ' CHANGELOG.md > RELEASE_NOTES.md
++          echo "--- RELEASE NOTES ---"
++          cat RELEASE_NOTES.md
++
++      - name: Create GitHub release
++        uses: softprops/action-gh-release@v2
++        with:
++          tag_name: ${{ github.ref_name }}
++          name: ${{ github.ref_name }}
++          body_path: RELEASE_NOTES.md
++        env:
++          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+index 0000000..744e3a1
+--- /dev/null
++++ b/CHANGELOG.md
+@@ -0,0 +1,48 @@
++# Changelog
++
++All notable changes to this project will be documented in this file.
++
++## v0.2.0rc1 (2025-09-08)
++
++Highlights
++- Governance integrated end-to-end: schema, models, persistence, and fixer merge from preamble.
++- Pluggable embeddings with caching: built-in hash (deterministic), OpenAI (optional), and local Sentence-Transformers.
++- ANN search ready: FAISS index build/search with batching and sleep to smooth CPU usage.
++- API Server: FastAPI endpoints for validate, search, and add.
++- Robust validation: JSON Schema packaged with `FormatChecker`; fixer is idempotent.
++
++Added
++- `governance` to root model and JSON Schema with provenance, retention policy, and access control.
++- `episodic_memory/embeddings.py`: Hash, OpenAI, and Sentence-Transformers embedders; `CachedEmbedder` with SQLite cache.
++- `episodic_memory/cache.py`: SQLite cache (WAL, busy timeout) for CPU/network smoothing.
++- `episodic_memory/faiss_index.py`: FAISS manager (build/search, batch controls).
++- `server.py`: FastAPI app with `/health`, `/validate`, `/search`, `/add`.
++- CLI commands: `schema-validate`, `fix`, `index-build`, `index-search`.
++- GitHub Actions CI: lint (ruff) and tests across 3.9–3.11.
++
++Changed
++- Deterministic `_hash_embed` (sha256 n‑grams) replaces salt-random `hash()` usage.
++- Schema validation now enforces formats via `Draft202012Validator` + `FormatChecker`.
++- `index-search` uses FAISS index dimension for query embedding to avoid mismatches.
++- Schema loading via `importlib.resources` for packaging safety.
++
++Fixed
++- Fixer idempotency validated by unit test.
++- Temporal/index rebuild consistency improvements.
++
++Performance
++- Embedding cache with WAL + busy timeout to reduce contention and spikes.
++- FAISS index builder supports batching and `--sleep-ms` to smooth CPU load.
++- API uses a semaphore to cap concurrent embeddings.
++
++Security
++- Optional OpenAI usage; no keys logged. Recommend setting `OPENAI_API_KEY` in environment.
++
++Migration Notes
++- Run `episodic-memory fix <file> --in-place` once to rebuild indexes and align embedding dimensions.
++- If using FAISS, rebuild indexes after re-embedding.
++
++---
++
++## v0.1.0 (Initial)
++- Initial minimal store, loader, retrieval, CLI, and tests.
+diff --git a/README.md b/README.md
+index e30666f..844c621 100644
+--- a/README.md
++++ b/README.md
+@@ -46,6 +46,39 @@ API Server
+   - `POST /search` { path, query, top_k, threshold? }
+   - `POST /add` { path, text, tags[], importance, reward, tone, embedder?, openai_model?, embed_dim? }
+ 
++ANN Index (FAISS)
++- Build from a single file:
++  - `episodic-memory index-build EpisodicMemorySystem.json index.faiss --sleep-ms 5`
++- Build from a directory of JSON files:
++  - `episodic-memory index-build --data path/to/data/ --output indexes/faiss.index --batch-size 256 --sleep-ms 50`
++ - Search with a prebuilt index:
++  - `episodic-memory index-search indexes/faiss.index "episodic" --top-k 3`
++  - Note: when indexing a directory, result IDs are `file.json::memory_id`. Snippets may be empty unless you look up the source file. Use `--data` to supply a meta file or directory for snippets.
++
++Index Search Flags & Behavior
++- `episodic-memory index-search <index> "<query>" [options]`
++
++- `--data <path>`: accepts either
++  - path to a `<index>.meta.json` file (fast); or
++  - directory root (will look for `<index>.meta.json` adjacent to the index; otherwise performs a bounded scan).
++- `--persist-meta`: when resolving snippets via a directory scan, write a normalized sidecar `<index>.meta.json` next to the index for fast future lookups.
++- `--max-scan <N>` (default `2000`): upper bound on the number of files to scan when building ephemeral metadata; avoids accidental full-corpus scans.
++- `--min-score <float>`: filter results by minimum inner-product score (useful for normalized IP indexes).
++- `--max-distance <float>`: filter results by max L2 distance (for L2 indexes).
++- `--top-k <N>`: number of nearest neighbors to retrieve.
++
++Example (persist meta after resolving snippets from a data directory):
++
++```bash
++episodic-memory index-search indexes/faiss.index "episodic" --top-k 5 --data path/to/data/ --persist-meta
++```
++
++Example (filter by minimum score with normalized IP index):
++
++```bash
++episodic-memory index-search indexes/faiss.index "episodic" --top-k 10 --min-score 0.2 --data path/to/data/
++```
++
+ Embedding Backends
+ - Hash (default): No dependencies, deterministic, dimension configurable.
+ - OpenAI (optional): Set `OPENAI_API_KEY`, install `pip install -e .[openai]`, choose model via `--openai-model` or env `OPENAI_EMBEDDING_MODEL`.
+diff --git a/__pycache__/memory_cli.cpython-311.pyc b/__pycache__/memory_cli.cpython-311.pyc
+index b8f509561b320543e4dd21eabf6939687b852753..27ec2d2b17a7b1a3726de0f5b84903e64a06c95b 100644
+GIT binary patch
+literal 36224
+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
+Bhfn|j
+
+delta 4005
+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
+
+diff --git a/episodic_memory/__pycache__/faiss_index.cpython-311.pyc b/episodic_memory/__pycache__/faiss_index.cpython-311.pyc
+index e1014b0512b78c75c5ec20c5b824a4883ae79cdb..9a06431b8e70607bf486b2551cfeae783bf20c63 100644
+GIT binary patch
+delta 1308
+zcmZ{j&rcIk5Xbj*yIWdzOKG7SekBSDZuwCZ6vc=Z#n31OsTz$)t+YT*5q#Yk4j7CY
+z!-12N_$wGWDe*_5a`5QScn}ZNG{$VgAHc0d4qObr*+q*+W}DAWzBBJl-@MreO}F<r
+zAIq|XW7g95X3!_UbQTGgn;d)*E8wUQQsUeg7Zxy%7Ue>mN;*{$W`qido--8FBH^LP
+z2+RpxWFK6TJ>VD1bHA(A6V^$2f<3b*#3z=*ZEP*AMARVa5Pm4I50R?bYxb>tX#*;a
+z2n)mFDl;{g7NW2lK1danyU@iQbTKkA61y1Hh5p2FL}OXT<_9s}29jK5-N#%wU@x@L
+zAau%Qq!AMGs>8-qp5w?5C(Mak;GXl2YmB>)!&Jkf!W0jUc?ma9H#5O3#j~TSc6grG
+z;G|VdRYkK{2p02#Vt^^h1>?|1TutL4^5W8h<eCiLjZO{DXwOF9T0hG3-cI~=9ZN~w
+zX{mc&>dx@Q9wHeo%O%5KUZ<>&Zsf15to#+K-C%vv&Hm;)s~TwL-!)qUEw=ZB1X{qG
+zUjv`Tt+NC9`2+%z*AcZ1aF1B?pITtE<SiZ(!^Tvw#hj)fO&b%;?40<z>>$gQ{$z-3
+zM(myRBolN(=_&T6rxDm#m1O%%&!8Zi*L)T;df}VfSF7^_G0nUIYc$@cnZ38s5T>{g
+z9>h6B1j;;{NI$fAO2l?1B!5EK^J(Xu(OaX_!Zb}OzO>>?xvSIe>Ir_*wxE>UJ@l~s
+ze*5%^nbuUPKV9liDfMZko&}}ZhJrL99gySgAz_Gl>%_G|z307LaTKfJm8%Y2NNU40
+zwl>D78zYl|9ZH-WhbiUjxDQnvWz}KMeKiWk@YkYeY+R0>A7Oa)=xt|UJ!-|5NR6pJ
+zgnAnyn|2uER<k3=F_c}5>Nr!favvs(8`m`A4r<4J@X~26LPg+#X%KOqL6?$RM2q*a
+z&wg+?O8Zg2g22nCGQx@21c@Sf%WLLd{qtljf>4v;{)Q7C6gBR`&p{CWp_3Ec8H-);
+zWVqj0;+b}%$5g$*7awu;vKqQ|D54GOmf<Ab3%$i1<T^Ynezm`q5VrRJTr%|K4Wh<L
+FegQ+`BHRD~
+
+delta 1068
+zcmZ{iOH30{6o%(cXQmIQr4P!Zh_M!d;iaKPP)lqTBFG~KVlY~*4TC8OwRk%r7)fy9
+zf<$71hbRk7bYV2cg<50S85X)0LtHdrp{|UZ5?Qd&;5}2In82OMH)sBH&p&hTJr9pR
+zZnizQS}hzKW9|>}C-NIxsmPCWFyrt+x7cr1xqeO|y^09$MIZbS&y!;ikeY-k)08Q#
+zNiTVK6|1F{h+0HFq5=Ho1gT6vH6J$YZ$!n9;2C~yu%YauZWNl~yX>oM!Vn!YQfzc|
+z=!TjRua6{S8k?n?pT>L})LN^AAPXUCcJs6Y64r9!hkMoyi^Nm|$C2MWe6v)*g6)x@
+zit{`~3r4Iw^<p{ND<)Ve@S7DWXWIt{?444GB~l+DVLvz7`ugUIY@hC&Q|IF^v{&Pw
+zi(1&d;9Zh~%X09u9LySsxi!meVHKmb?bm!_w`hHReK$F;rQA;TD~p0J955^fgm8;-
+z@gxbiz@Vd!L~vc{cMb;;RAVUzA-Sk+LW-JMfj%ZAc1osRdV#%V2&Dt;NiQOB@e0|o
+z2bSE<U&dqvW?ePqxxF#cK9uYT7vd@+3cp+ji3)OInRJ#3sjpC9_{lccK6`t~>05UC
+zrVP`@bhUe#kZ$-}6d_mOQgMT{*#!5C$9!FA6Jk&-88M|L>Ck42pspWH9I8r&NgvFV
+ze3?{G#Wqnaxt^*)L2s-&jCA8e7&RdD=m<tf8Q40*_>idHF=tS3L*%EmV_wKDwI5UY
+zVpN$a&C4;IEbaZx7}!1T>T0wJAvzG(7&3B7i)q7yi6JeXRH=&kE$H!hE7B~yvwdZG
+zLG)(1{~^NzPoR;tnJDgrjgy>N-XyxR+!j_1OuHM&sfF;z(`Ap~*M&q(i)Z*`ik^Uh
+bvK}%C&&uAO3K7C;cjv0EukDegR_6K-0I%`M
+
+diff --git a/episodic_memory/faiss_index.py b/episodic_memory/faiss_index.py
+index 4bf233b..468dc0e 100644
+--- a/episodic_memory/faiss_index.py
++++ b/episodic_memory/faiss_index.py
+@@ -34,6 +34,7 @@ class FaissIndexManager:
+         self.dim = dim
+         self.index = faiss.IndexFlatIP(dim)
+         self.ids: List[str] = []
++        self.meta_map: dict[str, dict] = {}
+ 
+     def add_vectors(self, ids: List[str], vectors: List[List[float]], batch_size: int = 1024, sleep_ms: int = 0) -> None:
+         faiss, np = _ensure_faiss()
+@@ -66,7 +67,7 @@ class FaissIndexManager:
+         meta_path = index_path + ".meta.json"
+         faiss.write_index(self.index, index_path)
+         with open(meta_path, "w", encoding="utf-8") as f:
+-            json.dump({"dim": self.dim, "ids": self.ids}, f)
++            json.dump({"dim": self.dim, "ids": self.ids, "map": self.meta_map}, f)
+ 
+     @staticmethod
+     def load(index_path: str) -> "FaissIndexManager":
+@@ -76,7 +77,8 @@ class FaissIndexManager:
+             meta = json.load(f)
+         mgr = FaissIndexManager(dim=int(meta["dim"]))
+         mgr.index = faiss.read_index(index_path)
+-        mgr.ids = list(meta["ids"])  # type: ignore
++        mgr.ids = list(meta.get("ids", []))  # type: ignore
++        mgr.meta_map = dict(meta.get("map", {}))  # type: ignore
+         return mgr
+ 
+     @staticmethod
+@@ -93,4 +95,3 @@ class FaissIndexManager:
+             vecs.append([float(x) for x in v])
+         mgr.add_vectors(ids, vecs, batch_size=batch_size, sleep_ms=sleep_ms)
+         return mgr
+-
+diff --git a/memory_cli.py b/memory_cli.py
+index f98841f..23cd3b2 100644
+--- a/memory_cli.py
++++ b/memory_cli.py
+@@ -2,6 +2,8 @@
+ from __future__ import annotations
+ 
+ import argparse
++import os
++from glob import glob
+ import json
+ import sys
+ from typing import Any
+@@ -11,6 +13,15 @@ from episodic_memory.models import EpisodicMemorySystem
+ from episodic_memory.schema import load_schema, validate_instance
+ from episodic_memory.embeddings import get_embedder, CachedEmbedder
+ from episodic_memory.faiss_index import FaissIndexManager, _MissingFaiss
++from typing import Optional
++
++# optional progress reporting
++try:
++    from tqdm import tqdm  # type: ignore
++except Exception:  # pragma: no cover
++    tqdm = None
++import logging
++logger = logging.getLogger(__name__)
+ 
+ 
+ def cmd_validate(args: argparse.Namespace) -> int:
+@@ -146,35 +157,323 @@ def cmd_fix(args: argparse.Namespace) -> int:
+ 
+ 
+ def cmd_index_build(args: argparse.Namespace) -> int:
+-    store = MemoryStore.load(args.path)
+     try:
+-        mgr = FaissIndexManager.build_from_store(store, batch_size=args.batch_size, sleep_ms=args.sleep_ms)
+-        mgr.save(args.index)
+-        print(f"Index built and saved to: {args.index}")
++        # Resolve data sources
++        data_files: list[str] = []
++        if args.data:
++            if os.path.isdir(args.data):
++                data_files = [p for p in glob(os.path.join(args.data, "**", "*.json"), recursive=True)]
++            else:
++                data_files = [args.data]
++        elif args.path:
++            data_files = [args.path]
++        else:
++            print("Provide either a positional <path> or --data (file or directory)", file=sys.stderr)
++            return 2
++
++        if not data_files:
++            print("No JSON files found to index", file=sys.stderr)
++            return 2
++
++        out_index = args.output or args.index
++        if not out_index:
++            print("Provide an output index path via positional <index> or --output", file=sys.stderr)
++            return 2
++
++        # Initialize index manager from first file's dimension (EMS or generic JSON)
++        def _detect_dim(fp: str) -> int:
++            try:
++                st = MemoryStore.load(fp)
++                return int(st.system.system_metadata.embedding_dimension)
++            except Exception:
++                pass
++            try:
++                with open(fp, "r", encoding="utf-8") as fh:
++                    d = json.load(fh)
++                if isinstance(d, list):
++                    for e in d:
++                        if isinstance(e, dict):
++                            vec = e.get("vector") or e.get("embedding")
++                            if isinstance(vec, list) and vec:
++                                return int(len(vec))
++                if isinstance(d, dict):
++                    if "memories" in d and isinstance(d["memories"], list):
++                        for e in d["memories"]:
++                            if isinstance(e, dict):
++                                vec = e.get("vector") or e.get("embedding")
++                                if isinstance(vec, list) and vec:
++                                    return int(len(vec))
++                    vec = d.get("vector") or d.get("embedding")
++                    if isinstance(vec, list) and vec:
++                        return int(len(vec))
++            except Exception:
++                pass
++            raise RuntimeError(f"Unable to detect embedding dimension from {fp}")
++
++        dim0 = _detect_dim(data_files[0])
++        mgr = FaissIndexManager(dim0)
++        mgr.meta_map = {}
++
++        # Add vectors from each file, batching adds to smooth CPU
++        batch_ids: list[str] = []
++        batch_vecs: list[list[float]] = []
++        dim = mgr.dim
++        iterator = tqdm(data_files, desc="Indexing files") if tqdm else data_files
++        for fp in iterator:
++            # Try EMS first
++            handled = False
++            try:
++                store = MemoryStore.load(fp)
++                for mem_id, entry in store.system.memory_entries.items():
++                    vec = entry.encoded_experience.vector_embedding
++                    if not vec or len(vec) != dim:
++                        continue
++                    comp_id = f"{os.path.basename(fp)}::{mem_id}"
++                    batch_ids.append(comp_id)
++                    batch_vecs.append([float(x) for x in vec])
++                    # record meta
++                    try:
++                        snippet = entry.encoded_experience.raw_text[:160]
++                    except Exception:
++                        snippet = ""
++                    mgr.meta_map[comp_id] = {"source": fp, "snippet": snippet}
++                    if len(batch_ids) >= args.batch_size:
++                        mgr.add_vectors(batch_ids, batch_vecs, batch_size=args.batch_size, sleep_ms=args.sleep_ms)
++                        batch_ids.clear()
++                        batch_vecs.clear()
++                handled = True
++            except Exception:
++                handled = False
++
++            if not handled:
++                # Generic JSON fallback
++                try:
++                    with open(fp, "r", encoding="utf-8") as fh:
++                        d = json.load(fh)
++                except Exception:
++                    continue
++                entries = []
++                if isinstance(d, list):
++                    entries = d
++                elif isinstance(d, dict) and "memories" in d and isinstance(d["memories"], list):
++                    entries = d["memories"]
++                elif isinstance(d, dict):
++                    entries = [d]
++
++                for e in entries:
++                    if not isinstance(e, dict):
++                        continue
++                    vec = e.get("vector") or e.get("embedding")
++                    if not (isinstance(vec, list) and len(vec) == dim):
++                        continue
++                    mem_id = str(e.get("id") or e.get("memory_id") or len(mgr.ids))
++                    comp_id = f"{os.path.basename(fp)}::{mem_id}"
++                    batch_ids.append(comp_id)
++                    batch_vecs.append([float(x) for x in vec])
++                    snippet = e.get("snippet") or e.get("text") or ""
++                    mgr.meta_map[comp_id] = {"source": fp, "snippet": snippet}
++                    if len(batch_ids) >= args.batch_size:
++                        mgr.add_vectors(batch_ids, batch_vecs, batch_size=args.batch_size, sleep_ms=args.sleep_ms)
++                        batch_ids.clear()
++                        batch_vecs.clear()
++        if batch_ids:
++            mgr.add_vectors(batch_ids, batch_vecs, batch_size=args.batch_size, sleep_ms=args.sleep_ms)
++
++        mgr.save(out_index)
++        print(f"Index built and saved to: {out_index}")
+         return 0
+     except _MissingFaiss as e:
+         print(str(e), file=sys.stderr)
+         return 2
+ 
+ 
++# Backward/programmable wrappers for tests and integrations
++def index_build(args: argparse.Namespace) -> int:
++    """Wrapper alias to build index programmatically (matches test usage)."""
++    return cmd_index_build(args)
++
++
++def index_search_cli(args: argparse.Namespace) -> int:
++    """Programmatic CLI-like search that prints JSON results.
++
++    Delegates to cmd_index_search with sensible defaults.
++    """
++    # Ensure defaults expected by cmd_index_search
++    for k, v in {
++        "top_k": 5,
++        "json": True,
++        "embedder": None,
++        "openai_model": None,
++        "path": getattr(args, "path", None),
++        "data": getattr(args, "data", None),
++        "persist_meta": getattr(args, "persist_meta", False),
++        "max_scan": getattr(args, "max_scan", 2000),
++        "min_score": getattr(args, "min_score", None),
++        "max_distance": getattr(args, "max_distance", None),
++    }.items():
++        if not hasattr(args, k) or getattr(args, k) is None:
++            setattr(args, k, v)
++    return cmd_index_search(args)
++
++
+ def cmd_index_search(args: argparse.Namespace) -> int:
+     try:
+         mgr = FaissIndexManager.load(args.index)
+     except _MissingFaiss as e:
+         print(str(e), file=sys.stderr)
+         return 2
++    # Optionally load meta mapping override from --data (file or directory)
++    if getattr(args, "data", None):
++        dp = args.data
++        if os.path.isfile(dp) and dp.endswith(".json"):
++            try:
++                with open(dp, "r", encoding="utf-8") as mfh:
++                    mm = json.load(mfh)
++                    if isinstance(mm, dict) and "map" in mm:
++                        mgr.meta_map = mm.get("map", {})
++                    elif isinstance(mm, dict):
++                        mgr.meta_map = mm
++            except Exception:
++                pass
++        elif os.path.isdir(dp):
++            meta_guess = args.index + ".meta.json"
++            if os.path.exists(meta_guess):
++                try:
++                    with open(meta_guess, "r", encoding="utf-8") as mfh:
++                        mm = json.load(mfh)
++                        if isinstance(mm, dict) and "map" in mm:
++                            mgr.meta_map = mm.get("map", {})
++                except Exception:
++                    pass
+     # Build embedder and compute query vector
+-    store = MemoryStore.load(args.path)
++    store = None
++    if getattr(args, "path", None):
++        try:
++            store = MemoryStore.load(args.path)
++        except Exception:
++            store = None
+     base = get_embedder(args.embedder, model=args.openai_model) if args.embedder else get_embedder("hash")
+     embedder = CachedEmbedder(base, backend_name=args.embedder or "hash", model_id=args.openai_model)
+     # Use index dimension to avoid mismatches
+-    dim = mgr.dim if hasattr(mgr, "dim") else store.system.system_metadata.embedding_dimension
++    dim = mgr.dim if hasattr(mgr, "dim") else (store.system.system_metadata.embedding_dimension if store else 0)
+     qv = embedder.embed(args.query, dim)
+     hits = mgr.search(qv, top_k=args.top_k)
+-    for mid, score in hits:
+-        entry = store.system.memory_entries.get(mid)
+-        snippet = (entry.encoded_experience.raw_text[:120] + "...") if entry else ""
+-        print(f"- id={mid} score={score:.3f} text={snippet}")
++    # Threshold filters (assumes IP metric; L2 not used in IndexFlatIP)
++    if getattr(args, "min_score", None) is not None:
++        try:
++            thr = float(args.min_score)
++            hits = [(mid, sc) for (mid, sc) in hits if sc >= thr]
++        except Exception:
++            pass
++
++    # Helper: attempt directory-based snippet fallback if meta missing
++    def _dir_snippet(mid: str) -> tuple[str, str]:
++        root = getattr(args, "data", None)
++        if not root or not os.path.isdir(root):
++            return "", ""
++        if "::" not in mid:
++            return "", ""
++        base, mem_id = mid.split("::", 1)
++        # Build a mapping from basename -> full path (bounded by max_scan)
++        max_scan = max(0, int(getattr(args, "max_scan", 0) or 0))
++        scanned = 0
++        found_path: Optional[str] = None
++        for dirpath, _dirnames, filenames in os.walk(root):
++            for fname in filenames:
++                if fname.lower().endswith(".json"):
++                    scanned += 1
++                    if fname == base:
++                        found_path = os.path.join(dirpath, fname)
++                        break
++                    if max_scan and scanned >= max_scan:
++                        break
++            if found_path or (max_scan and scanned >= max_scan):
++                break
++        if not found_path:
++            return "", ""
++        try:
++            with open(found_path, "r", encoding="utf-8") as fh:
++                data = json.load(fh)
++        except Exception:
++            return "", ""
++        # Try EMS structure first
++        try:
++            obj = load_system_from_path(found_path)
++            mem = obj.get("memory_entries", {}).get(mem_id)
++            if mem:
++                raw = (
++                    mem.get("encoded_experience", {}).get("raw_text")
++                    or mem.get("snippet")
++                    or ""
++                )
++                sn = (raw[:120] + "...") if raw and len(raw) > 120 else (raw or "")
++                return sn, found_path
++        except Exception:
++            pass
++        # Fallback: generic list format
++        try:
++            if isinstance(data, list):
++                for e in data:
++                    if isinstance(e, dict) and str(e.get("id")) == mem_id:
++                        raw = e.get("snippet") or e.get("text") or ""
++                        sn = (raw[:120] + "...") if raw and len(raw) > 120 else (raw or "")
++                        return sn, found_path
++        except Exception:
++            return "", ""
++        return "", found_path or ""
++    # Assemble output with optional meta snippets
++    updated_meta = False
++    if args.json:
++        out = []
++        for mid, score in hits:
++            snippet = ""
++            if mgr.meta_map and mid in mgr.meta_map:
++                snippet = mgr.meta_map[mid].get("snippet", "")
++            else:
++                if store is not None:
++                    entry = store.system.memory_entries.get(mid)
++                    snippet = (entry.encoded_experience.raw_text[:120] + "...") if entry else ""
++                elif getattr(args, "data", None):
++                    snippet, src = _dir_snippet(mid)
++                    if args.persist_meta and snippet:
++                        mgr.meta_map[mid] = {"source": src, "snippet": snippet}
++                        updated_meta = True
++            out.append({"id": mid, "score": round(score, 6), "snippet": snippet})
++        print(json.dumps(out, indent=2))
++    else:
++        for mid, score in hits:
++            if mgr.meta_map and mid in mgr.meta_map:
++                snippet = mgr.meta_map[mid].get("snippet", "")
++            else:
++                if store is not None:
++                    entry = store.system.memory_entries.get(mid)
++                    snippet = (entry.encoded_experience.raw_text[:120] + "...") if entry else ""
++                else:
++                    snippet, src = _dir_snippet(mid)
++                    if args.persist_meta and snippet:
++                        mgr.meta_map[mid] = {"source": src, "snippet": snippet}
++                        updated_meta = True
++            print(f"- id={mid} score={score:.3f} text={snippet}")
++
++    # Persist meta map if requested
++    if args.persist_meta:
++        meta_path = args.index + ".meta.json"
++        payload = {"dim": mgr.dim, "ids": getattr(mgr, "ids", []), "map": mgr.meta_map}
++        try:
++            # Merge with existing if present
++            if os.path.exists(meta_path):
++                with open(meta_path, "r", encoding="utf-8") as mf:
++                    old = json.load(mf)
++                if isinstance(old, dict):
++                    # prefer current dim/ids, but merge map entries
++                    old_map = old.get("map") if isinstance(old.get("map"), dict) else {}
++                    old_map.update(payload["map"])  # type: ignore
++                    payload["map"] = old_map  # type: ignore
++            with open(meta_path, "w", encoding="utf-8") as mf:
++                json.dump(payload, mf, ensure_ascii=False, indent=2)
++            print(f"Persisted meta to {meta_path}")
++        except Exception as e:
++            print(f"Warning: failed to persist meta: {e}", file=sys.stderr)
+     return 0
+ 
+ 
+@@ -225,19 +524,27 @@ def build_parser() -> argparse.ArgumentParser:
+     fx.set_defaults(func=cmd_fix)
+ 
+     ib = sub.add_parser("index-build", help="Build a FAISS index for fast search")
+-    ib.add_argument("path", help="Path to EpisodicMemorySystem.json")
+-    ib.add_argument("index", help="Path to write FAISS index (e.g., index.faiss)")
++    ib.add_argument("path", nargs="?", help="Path to a single EpisodicMemorySystem.json (positional)")
++    ib.add_argument("index", nargs="?", help="Path to write FAISS index (positional, e.g., index.faiss)")
++    ib.add_argument("--data", help="File or directory of JSON files to index")
++    ib.add_argument("--output", help="Output FAISS index path (e.g., indexes/faiss.index)")
+     ib.add_argument("--batch-size", type=int, default=1024)
+     ib.add_argument("--sleep-ms", type=int, default=0, help="Sleep between batches to reduce CPU spikes")
+     ib.set_defaults(func=cmd_index_build)
+ 
+     isr = sub.add_parser("index-search", help="Search using a pre-built FAISS index")
+-    isr.add_argument("path", help="Path to EpisodicMemorySystem.json for metadata lookup")
+     isr.add_argument("index", help="Path to FAISS index (.faiss)")
+     isr.add_argument("query", help="Query text")
++    isr.add_argument("--path", dest="path", default=None, help="Path to EpisodicMemorySystem.json for fallback snippets")
++    isr.add_argument("--data", dest="data", default=None, help="Optional meta JSON file or directory root")
+     isr.add_argument("--top-k", type=int, default=5)
++    isr.add_argument("--min-score", type=float, default=None, help="Minimum score threshold for results (IP metric)")
++    isr.add_argument("--max-distance", type=float, default=None, help="Maximum distance for L2 metric indexes")
+     isr.add_argument("--embedder", choices=["hash", "openai", "local"], default=None)
+     isr.add_argument("--openai-model", default=None)
++    isr.add_argument("--json", action="store_true", help="Output JSON with snippets if available")
++    isr.add_argument("--persist-meta", action="store_true", help="Write/normalize <index>.meta.json after search")
++    isr.add_argument("--max-scan", type=int, default=2000, help="When using --data dir and no meta, limit file scans")
+     isr.set_defaults(func=cmd_index_search)
+ 
+     return p
+diff --git a/tests/__pycache__/test_faiss_cli_meta.cpython-311.pyc b/tests/__pycache__/test_faiss_cli_meta.cpython-311.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..68d3aa4bc95669ed9780893225b612e672092903
+GIT binary patch
+literal 3192
+zcmb^zU1%J~d1n7^_x|tnW6N%0DUxEJpbAnODq6Qxv1=-)5yo;JbWu1~w|mw~_p{j@
+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
+ON00ab`vD1Kfd2uc)aBa%
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/__pycache__/test_persist_meta_e2e.cpython-311.pyc b/tests/__pycache__/test_persist_meta_e2e.cpython-311.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..9084419b0098a03f92e37a7de8480c2b03998d49
+GIT binary patch
+literal 4884
+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
+K{d9%ur~eD15p(bW
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/test_faiss_cli_meta.py b/tests/test_faiss_cli_meta.py
+new file mode 100644
+index 0000000..04fa507
+--- /dev/null
++++ b/tests/test_faiss_cli_meta.py
+@@ -0,0 +1,65 @@
++import json
++import argparse
++from pathlib import Path
++try:
++    import numpy as np  # type: ignore
++    HAS_NUMPY = True
++except Exception:
++    HAS_NUMPY = False
++import importlib
++try:
++    import pytest  # type: ignore
++except Exception:  # pragma: no cover
++    pytest = None
++
++try:
++    import faiss  # noqa: F401, type: ignore
++    HAS_FAISS = True
++except Exception:
++    HAS_FAISS = False
++
++# If pytest is available, mark skip; otherwise runtime-guard inside test
++if pytest is not None:
++    pytestmark = pytest.mark.skipif(not (HAS_FAISS and HAS_NUMPY), reason="FAISS/NumPy not installed")
++
++memory_cli = importlib.import_module("memory_cli")
++
++
++def make_dummy_json(path: Path, mem_id: str, vec):
++    data = [{"id": mem_id, "vector": list(vec), "snippet": f"snippet for {mem_id}"}]
++    with open(path, "w", encoding="utf-8") as f:
++        json.dump(data, f)
++
++
++def test_index_build_and_search_with_meta(tmp_path: Path):
++    if not (HAS_FAISS and HAS_NUMPY):
++        # Fallback for unittest discovery without extras
++        return
++    a = tmp_path / "a.json"
++    b = tmp_path / "b.json"
++    v1 = np.random.RandomState(0).randn(8).astype("float32")
++    v2 = np.random.RandomState(1).randn(8).astype("float32")
++    make_dummy_json(a, "m1", v1)
++    make_dummy_json(b, "m2", v2)
++
++    args = argparse.Namespace(
++        data=str(tmp_path),
++        output=str(tmp_path / "idx.faiss"),
++        batch_size=256,
++        sleep_ms=0,
++        positional_input=None,
++        path=None,
++        index=None,
++    )
++    rc = memory_cli.index_build(args)
++    assert rc == 0
++
++    search_args = argparse.Namespace(
++        index=str(tmp_path / "idx.faiss"),
++        query="whatever",
++        top_k=2,
++        data=str(tmp_path),
++    )
++    # Run; function prints JSON to stdout. This ensures no exceptions.
++    rc2 = memory_cli.index_search_cli(search_args)
++    assert rc2 == 0
+diff --git a/tests/test_persist_meta_e2e.py b/tests/test_persist_meta_e2e.py
+new file mode 100644
+index 0000000..d844277
+--- /dev/null
++++ b/tests/test_persist_meta_e2e.py
+@@ -0,0 +1,93 @@
++import argparse
++import json
++from pathlib import Path
++
++try:
++    import pytest  # type: ignore
++    HAS_PYTEST = True
++except Exception:
++    HAS_PYTEST = False
++
++if HAS_PYTEST:
++    # Skip gracefully if optional deps missing
++    pytest.importorskip("faiss")
++    np = pytest.importorskip("numpy")
++    memory_cli = pytest.importorskip("memory_cli")
++
++    def make_dummy_json(path: Path, mem_id: str, vec, snippet="hello"):
++        data = [{"id": mem_id, "vector": list(vec), "snippet": snippet}]
++        with open(path, "w", encoding="utf-8") as fh:
++            json.dump(data, fh)
++
++    @pytest.mark.integration
++    def test_persist_meta_end_to_end(tmp_path, capsys):
++        # Prepare a small directory of JSON "memories"
++        d = tmp_path / "data"
++        d.mkdir()
++        v1 = np.random.RandomState(0).randn(8).astype("float32")
++        v2 = np.random.RandomState(1).randn(8).astype("float32")
++        make_dummy_json(d / "a.json", "m1", v1, snippet="snippet A")
++        make_dummy_json(d / "b.json", "m2", v2, snippet="snippet B")
++
++        # Build an index from the directory
++        idx_out = tmp_path / "idx.faiss"
++        build_args = argparse.Namespace(
++            data=str(d),
++            output=str(idx_out),
++            batch_size=256,
++            sleep_ms=0,
++            positional_input=None,
++            path=None,
++            index=None,
++        )
++        # Programmatic wrapper: index_build(args)
++        rc = memory_cli.index_build(build_args)
++        assert rc == 0
++        assert idx_out.exists(), "Index file was not created"
++
++        # Run search with persist_meta -> should write <index>.meta.json
++        search_args = argparse.Namespace(
++            index=str(idx_out),
++            query="snippet",
++            top_k=2,
++            data=str(d),
++            persist_meta=True,
++            max_scan=2000,
++            min_score=None,
++            max_distance=None,
++            store=None,
++        )
++        rc2 = memory_cli.index_search_cli(search_args)
++        assert rc2 == 0
++        captured = capsys.readouterr()
++        out1 = captured.out.strip()
++        assert out1, "index_search_cli printed nothing (expected JSON)"
++
++        # meta file dumped adjacent to index
++        meta_path = idx_out.with_suffix(idx_out.suffix + ".meta.json")
++        assert meta_path.exists(), "Persisted meta file not found after search --persist-meta"
++
++        # Parse JSON result (basic sanity)
++        results = json.loads(out1)
++        assert isinstance(results, list) and len(results) > 0, "Search returned no results"
++
++        # Now run search again with max_scan=0 (to ensure meta is used and no scanning needed)
++        search_args2 = argparse.Namespace(
++            index=str(idx_out),
++            query="snippet",
++            top_k=2,
++            data=str(d),
++            persist_meta=False,
++            max_scan=0,  # forbid scanning if meta absent
++            min_score=None,
++            max_distance=None,
++            store=None,
++        )
++        rc3 = memory_cli.index_search_cli(search_args2)
++        assert rc3 == 0
++        captured2 = capsys.readouterr()
++        out2 = captured2.out.strip()
++        assert out2, "Second search printed nothing; expected JSON results loaded from persisted meta"
++
++        results2 = json.loads(out2)
++        assert isinstance(results2, list) and len(results2) > 0, "Second search returned no results using persisted meta"
+diff --git a/workspace.schema.yml b/workspace.schema.yml
+new file mode 100644
+index 0000000..c977636
+--- /dev/null
++++ b/workspace.schema.yml
+@@ -0,0 +1,8 @@
++$schema: https://azuremlschemas.azureedge.net/latest/workspace.schema.json
++name: <insert name here>
++location: <insert region here>
++display_name: john-workspace
++description: A workspace for testing enterprise readiness features
++tags:
++  purpose: testing
++  team: ws-management
+-- 
+2.51.0.windows.1
+

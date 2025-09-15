@@ -1,0 +1,25 @@
+{
+  "evaluated_at_et": "2025-09-12T18:31:39.355836Z",
+  "decision": "HOLD",
+  "strict": {
+    "events": 200,
+    "actions": 220,
+    "failure_rate": 0.0187,
+    "avg_severity": 2.3,
+    "explainability_rate": 0.9606,
+    "kpi": 57.8
+  },
+  "explore": {
+    "events": 200,
+    "actions": 208,
+    "failure_rate": 0.0389,
+    "avg_severity": 2.1,
+    "explainability_rate": 0.8988,
+    "kpi": 48.8
+  },
+  "overall_kpi": 55.1,
+  "weights": {
+    "strict": 0.7,
+    "explore": 0.3
+  }
+}

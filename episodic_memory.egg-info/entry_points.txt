@@ -1,0 +1,3 @@
+[console_scripts]
+closed-loop-security = memory_cli:main
+episodic-memory = memory_cli:main

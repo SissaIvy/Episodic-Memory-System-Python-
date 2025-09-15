@@ -33,7 +33,8 @@ def main():
                 "timestamp": t0 + i * 0.01,
                 "payload": payload,
             }
-        f.write(json.dumps(evt, default=json_default) + "\n")
+            # Use the NumPy-safe serializer and write every event
+            f.write(json.dumps(evt, default=json_default) + "\n")
     print(json.dumps({"status": "ok", "events": args.n_events}, default=json_default))
 
 

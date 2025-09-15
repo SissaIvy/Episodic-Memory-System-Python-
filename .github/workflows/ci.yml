@@ -56,6 +56,97 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .
 
+      - name: Set PYTHONPATH
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+
+      - name: Run CLI search with embedder flag
+        run: |
+          python memory_cli.py search EpisodicMemorySystem.json "episodic" --top-k 1 --threshold 0.0 --embedder hash
+
+  smoke-faiss:
+    name: Smoke (FAISS + NumPy) Python 3.11
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[faiss]
+          python -m pip install numpy pytest
+
+      - name: Set PYTHONPATH
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+
+      - name: Run smoke tests (pytest)
+        run: |
+          python -m pytest -q tests/test_faiss_cli_meta.py tests/test_persist_meta_e2e.py
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    name: Lint and Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install ruff
+
+      - name: Ruff Lint
+        run: |
+          ruff --version
+          ruff check .
+
+      - name: Run unit tests
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+
+  cli-smoke:
+    name: CLI smoke (search flags)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
       - name: Run CLI search with embedder flag
         run: |
           python memory_cli.py search EpisodicMemorySystem.json "episodic" --top-k 1 --threshold 0.0 --embedder hash

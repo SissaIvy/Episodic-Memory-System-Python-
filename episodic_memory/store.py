@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from episodic_memory.json_compat import default as json_default
 import math
 import time
 import uuid
@@ -212,8 +213,12 @@ class MemoryStore:
         }
 
     def save(self, path: str) -> None:
+        """
+        Persist the store to disk. Ensure JSON is NumPy-safe by passing default=json_default.
+        """
+        store_dict = self.to_dict()
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
+            json.dump(store_dict, f, indent=2, default=json_default)
 
     # --- Mutations ---
     def add_memory(

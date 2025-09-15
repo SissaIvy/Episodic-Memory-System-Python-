@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# VS Codes Copilot local workspace artifacts
+VS Codes Copilot/
+
+# Temporary files
+*.tmp
+*.swp
+*.log

@@ -1,4 +1,5 @@
 import argparse, json, os
+from episodic_memory.json_compat import default as json_default
 from pathlib import Path
 
 
@@ -99,8 +100,8 @@ def main():
         "issues": issues,
     }
     Path(args.report_json).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.report_json).write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps(report))
+    Path(args.report_json).write_text(json.dumps(report, indent=2, default=json_default), encoding="utf-8")
+    print(json.dumps(report, default=json_default))
 
 
 if __name__ == "__main__":

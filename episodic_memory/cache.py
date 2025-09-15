@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from episodic_memory.json_compat import default as json_default
 import os
 import sqlite3
 import threading
@@ -55,7 +56,8 @@ class EmbeddingCache:
 
     def put(self, text: str, backend: str, model: Optional[str], dim: int, vec: Iterable[float]) -> None:
         key = self._k(text, backend, model, dim)
-        data = json.dumps(list(vec))
+        # ensure numpy scalars are serialized via json_default
+        data = json.dumps(list(vec), default=json_default)
         with self._lock, self._conn:
             self._conn.execute("INSERT OR REPLACE INTO embeddings(key, vector) VALUES (?, ?)", (key, data))
 

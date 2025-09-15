@@ -4,6 +4,7 @@ from pathlib import Path
 # import orchestrator from repo root
 sys.path.append(".")
 from closed_loop_security import build_system  # noqa: E402
+from episodic_memory.json_compat import default as json_default
 
 
 def stream_jsonl(path: str):
@@ -27,16 +28,8 @@ def main():
     improvement = sysm.continuous_improvement()
     result["improvement"] = improvement
     Path(args.results_json).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.results_json).write_text(json.dumps(result), encoding="utf-8")
-    print(
-        json.dumps(
-            {
-                "status": "ok",
-                "profile": args.profile,
-                "actions": result["meta"]["counts"].get("actions", 0),
-            }
-        )
-    )
+    Path(args.results_json).write_text(json.dumps(result, default=json_default), encoding="utf-8")
+    print(json.dumps({"status": "ok", "profile": args.profile, "actions": result["meta"]["counts"].get("actions", 0)}, default=json_default))
 
 
 if __name__ == "__main__":

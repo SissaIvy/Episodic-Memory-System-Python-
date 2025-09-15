@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mechanic Pit Wall — Health Overview</title>
+    <style>
+      :root { --bg:#0D1117; --card:#111827; --muted:#9CA3AF; --ok:#2EA44F; --warn:#F59E0B; --bad:#D73A49; --txt:#E5E7EB; }
+      body { margin:0; font-family: ui-sans-serif, system-ui, Segoe UI, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--txt); }
+      .wrap { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+      .card { background: var(--card); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+      .row { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+      .pill { border-radius: 999px; padding: 6px 10px; font-weight:600; }
+      .pill.ok { background: var(--ok); }
+      .pill.warn { background: var(--warn); color:#111; }
+      .pill.bad { background: var(--bad); }
+      .muted { color: var(--muted); }
+      .kgrid { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 12px; }
+      .k { background:#0F172A; border-radius:12px; padding:12px; }
+      .k h4 { margin:0 0 6px 0; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#9CA3AF }
+      .k .v { font-size:22px; font-weight:700; }
+      .tbl { width:100%; border-collapse: collapse; margin-top: 10px; }
+      .tbl th, .tbl td { text-align:left; padding:8px 10px; border-bottom: 1px solid #1F2937; }
+      .small { font-size:12px; }
+      a { color:#93C5FD; text-decoration:none; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="row" id="hdr">
+          <h2 style="margin:0;">Mechanic Pit Wall</h2>
+          <span class="pill" id="band">…</span>
+          <span class="muted small" id="ts">…</span>
+        </div>
+        <div class="kgrid">
+          <div class="k"><h4>Health Index</h4><div class="v" id="hi">…</div></div>
+          <div class="k"><h4>Window</h4><div class="v" id="win">…</div></div>
+          <div class="k"><h4>Dashboard</h4><div class="v small"><a href="../pitcrew-dashboard/index.html">Open PitCrew</a></div></div>
+        </div>
+        <table class="tbl small" id="contributors">
+          <thead><tr><th>Contributor</th><th>Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="small muted" style="margin-top:10px">Source: sample_health.json (replace with reports/health/{date}.json)</div>
+      </div>
+    </div>
+    <script>
+      async function main() {
+        try {
+          const res = await fetch('sample_health.json', {cache:'no-store'});
+          const data = await res.json();
+          const hi = document.getElementById('hi');
+          const win = document.getElementById('win');
+          const ts = document.getElementById('ts');
+          const band = document.getElementById('band');
+          const tbody = document.querySelector('#contributors tbody');
+
+          hi.textContent = data.health_index.toFixed(1);
+          win.textContent = data.time_window;
+          ts.textContent = `Computed: ${data.computed_at}`;
+          band.textContent = data.band.toUpperCase();
+          band.classList.add(data.band === 'green' ? 'ok' : (data.band === 'yellow' ? 'warn' : 'bad'));
+
+          const entries = Object.entries(data.contributors || {});
+          entries.sort((a,b)=>b[1]-a[1]);
+          for (const [k,v] of entries) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${k}</td><td>${v.toFixed(1)}</td>`;
+            tbody.appendChild(tr);
+          }
+        } catch (e) {
+          console.error(e);
+          document.getElementById('hdr').insertAdjacentHTML('beforeend', '<span class="pill bad">LOAD ERROR</span>');
+        }
+      }
+      main();
+    </script>
+  </body>
+  </html>
+

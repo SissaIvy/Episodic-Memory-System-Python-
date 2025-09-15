@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from .json_compat import default as json_default
 import math
 import os
 import time
@@ -67,7 +68,7 @@ class FaissIndexManager:
         meta_path = index_path + ".meta.json"
         faiss.write_index(self.index, index_path)
         with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump({"dim": self.dim, "ids": self.ids, "map": self.meta_map}, f)
+            json.dump({"dim": self.dim, "ids": self.ids, "map": self.meta_map}, f, ensure_ascii=False, indent=2, default=json_default)
 
     @staticmethod
     def load(index_path: str) -> "FaissIndexManager":

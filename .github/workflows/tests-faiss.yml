@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ feat/faiss-smoke-tests ]
   push:
-    branches: [ feat/faiss-smoke-tests ]
+    branches: [ feat/faiss-smoke-tests, fix/review-fixpack, ci/faiss-wheel-and-json-compat ]
 
 jobs:
   tests:
@@ -21,11 +21,29 @@ jobs:
       - name: Install dependencies (with faiss extras)
         run: |
           python -m pip install -U pip
+          # Prefer a prebuilt CPU wheel to avoid flaky native builds
+          pip install --prefer-binary faiss-cpu
           pip install -e ".[faiss]"
+      - name: Fallback: conda-forge faiss-cpu if pip failed
+        if: failure()
+        shell: bash
+        run: |
+          echo "Using conda-forge fallback for faiss-cpu"
+          wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+          ./bin/micromamba shell init -s bash -p ~/micromamba
+          source ~/.bashrc
+          ./bin/micromamba create -y -n faiss -c conda-forge python=3.11 faiss-cpu
+          eval "$(./bin/micromamba shell hook -s bash)"
+          micromamba activate faiss
+          python -V
+          pip install -e ".[faiss]"
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/episodic_memory:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+      - name: Sanity: show faiss version
+        run: python -c "import faiss,sys; print('faiss', faiss.__version__)"
 
       - name: Set PYTHONPATH
         run: |
-          echo "PYTHONPATH=$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+          echo "PYTHONPATH=$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/episodic_memory:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
 
       - name: Run tests
         run: |

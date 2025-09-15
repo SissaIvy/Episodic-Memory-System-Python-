@@ -1,0 +1,15 @@
+{
+  "patch_plan": [
+    {
+      "step": "Lift explainability to gate on both tracks",
+      "owner": "#Evaluator",
+      "eta_hours": 8,
+      "actions": [
+        "stabilize randomness (seed, sampling)",
+        "simplify/structure explanations",
+        "prune risky search branches"
+      ]
+    }
+  ],
+  "source": "aml_out\\report.json"
+}

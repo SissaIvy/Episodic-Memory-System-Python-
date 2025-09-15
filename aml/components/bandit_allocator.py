@@ -1,4 +1,5 @@
 import argparse, json
+from episodic_memory.json_compat import default as json_default
 from pathlib import Path
 
 
@@ -31,8 +32,8 @@ def main():
     total = ps + pe if ps + pe > 0 else 1.0
     allocation = {"strict": ps / total, "explore": pe / total}
     Path(args.allocation_json).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.allocation_json).write_text(json.dumps(allocation, indent=2), encoding="utf-8")
-    print(json.dumps(allocation))
+    Path(args.allocation_json).write_text(json.dumps(allocation, indent=2, default=json_default), encoding="utf-8")
+    print(json.dumps(allocation, default=json_default))
 
 
 if __name__ == "__main__":

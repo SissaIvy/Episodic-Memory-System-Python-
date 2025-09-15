@@ -1,0 +1,19 @@
+{
+  "computed_at": "2025-09-14T15:25:30.435954Z",
+  "time_window": "24h",
+  "health_index": 72.4,
+  "band": "yellow",
+  "contributors": {
+    "ModelPerf": 55.1,
+    "DataHealth": 79.9,
+    "GradStability": 73.9,
+    "ServingSLO": 86.0,
+    "Fairness": 80.0,
+    "Security": 84.0
+  },
+  "inputs": {
+    "mech_out": "C:\\Users\\sissa\\sissa_ivy\\Pit Crew\\mech_out\\mechanic_kpi.json",
+    "aml_report": "C:\\Users\\sissa\\sissa_ivy\\Pit Crew\\aml_out\\report.json",
+    "security_report": null
+  }
+}

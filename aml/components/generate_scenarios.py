@@ -1,4 +1,5 @@
 import argparse, json, time, uuid, random
+from episodic_memory.json_compat import default as json_default
 from pathlib import Path
 
 
@@ -32,8 +33,8 @@ def main():
                 "timestamp": t0 + i * 0.01,
                 "payload": payload,
             }
-            f.write(json.dumps(evt) + "\n")
-    print(json.dumps({"status": "ok", "events": args.n_events}))
+        f.write(json.dumps(evt, default=json_default) + "\n")
+    print(json.dumps({"status": "ok", "events": args.n_events}, default=json_default))
 
 
 if __name__ == "__main__":

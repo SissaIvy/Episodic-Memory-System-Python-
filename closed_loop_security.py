@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 import enum
 import json
+from episodic_memory.json_compat import default as json_default
 import time
 import uuid
 import argparse
@@ -449,7 +450,7 @@ class ClosedLoopSecuritySystem:
             for a in plan.actions:
                 a.dry_run = self._dry_run_default if a.dry_run else a.dry_run
                 a.idempotency_key = a.idempotency_key or stable_key(
-                    event.id, a.name, json.dumps(a.parameters, sort_keys=True)
+                    event.id, a.name, json.dumps(a.parameters, sort_keys=True, default=json_default)
                 )
 
             overlay_result = self.overlay.apply(plan)
@@ -603,7 +604,7 @@ def main() -> None:
     result = sysm.process_events()
     improve = sysm.continuous_improvement()
     result["improvement"] = improve
-    print(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2, default=json_default))
 
 
 if __name__ == "__main__":

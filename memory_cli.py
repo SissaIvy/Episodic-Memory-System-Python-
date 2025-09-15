@@ -5,6 +5,7 @@ import argparse
 import os
 from glob import glob
 import json
+from episodic_memory.json_compat import default as json_default
 import sys
 from typing import Any
 
@@ -40,7 +41,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
     print(json.dumps({
         "total_memories": system.system_metadata.total_memories,
         "embedding_dimension": system.system_metadata.embedding_dimension,
-    }, indent=2))
+    }, indent=2, default=json_default))
     if args.schema:
         if ok:
             print("Schema validation: OK")
@@ -112,7 +113,7 @@ def cmd_schema_validate(args: argparse.Namespace) -> int:
 def _write_output(data: dict, in_path: str, out_path: str | None, in_place: bool) -> str:
     path = in_path if in_place and not out_path else (out_path or in_path)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+           json.dump(data, f, ensure_ascii=False, indent=2, default=json_default)
     return path
 
 
@@ -454,7 +455,7 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                         mgr.meta_map[mid] = {"source": src, "snippet": snippet}
                         updated_meta = True
             out.append({"id": mid, "score": round(score, 6), "snippet": snippet})
-        print(json.dumps(out, indent=2))
+        print(json.dumps(out, indent=2, default=json_default))
     else:
         for mid, score in hits:
             if mgr.meta_map and mid in mgr.meta_map:
@@ -485,7 +486,7 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                     old_map.update(payload["map"])  # type: ignore
                     payload["map"] = old_map  # type: ignore
             with open(meta_path, "w", encoding="utf-8") as mf:
-                json.dump(payload, mf, ensure_ascii=False, indent=2)
+                 json.dump(payload, mf, ensure_ascii=False, indent=2, default=json_default)
             print(f"Persisted meta to {meta_path}")
         except Exception as e:
             print(f"Warning: failed to persist meta: {e}", file=sys.stderr)

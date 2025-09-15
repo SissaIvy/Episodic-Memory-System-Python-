@@ -1,0 +1,20 @@
+{
+  "computed_at": "2025-09-14T15:00:00Z",
+  "time_window": "24h",
+  "health_index": 74.5,
+  "band": "yellow",
+  "contributors": {
+    "ModelPerf": 55.1,
+    "DataHealth": 65.0,
+    "GradStability": 78.0,
+    "ServingSLO": 86.0,
+    "Fairness": 80.0,
+    "Security": 84.0
+  },
+  "inputs": {
+    "mech_out": "mech_out/mechanic_kpi.json",
+    "aml_report": "aml_out/report.json",
+    "security_report": null
+  }
+}
+

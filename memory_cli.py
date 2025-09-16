@@ -18,7 +18,8 @@ from typing import Optional
 # optional progress reporting
 try:
     from tqdm import tqdm  # type: ignore
-except Exception:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
+    # Handle expected cases where tqdm is not installed
     tqdm = None
 import logging
 logger = logging.getLogger(__name__)
@@ -28,8 +29,17 @@ def cmd_validate(args: argparse.Namespace) -> int:
     try:
         data = load_system_from_path(args.path)
         system = EpisodicMemorySystem.from_dict(data)
-    except Exception as e:
-        print(f"Invalid file: {e}", file=sys.stderr)
+    except (FileNotFoundError, OSError) as e:
+        # Handle file access errors
+        print(f"Cannot read file: {e}", file=sys.stderr)
+        return 2
+    except (ValueError, json.JSONDecodeError) as e:
+        # Handle JSON parsing errors
+        print(f"Invalid JSON format: {e}", file=sys.stderr)
+        return 2
+    except (KeyError, TypeError) as e:
+        # Handle data structure errors during model construction
+        print(f"Invalid memory system structure: {e}", file=sys.stderr)
         return 2
     ok = True
     msg = None
@@ -187,11 +197,15 @@ def cmd_index_build(args: argparse.Namespace) -> int:
 
         # Initialize index manager from first file's dimension (EMS or generic JSON)
         def _detect_dim(fp: str) -> int:
+            # Try to load as EpisodicMemorySystem first
             try:
                 st = MemoryStore.load(fp)
                 return int(st.system.system_metadata.embedding_dimension)
-            except Exception:
+            except (FileNotFoundError, OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+                # Expected when file is not an EpisodicMemorySystem or is corrupted
                 pass
+            
+            # Fallback: try to parse as generic JSON and extract vector dimensions
             try:
                 with open(fp, "r", encoding="utf-8") as fh:
                     d = json.load(fh)
@@ -211,7 +225,8 @@ def cmd_index_build(args: argparse.Namespace) -> int:
                     vec = d.get("vector") or d.get("embedding")
                     if isinstance(vec, list) and vec:
                         return int(len(vec))
-            except Exception:
+            except (FileNotFoundError, OSError, json.JSONDecodeError):
+                # Expected when file cannot be read or is not valid JSON
                 pass
             raise RuntimeError(f"Unable to detect embedding dimension from {fp}")
 
@@ -239,7 +254,8 @@ def cmd_index_build(args: argparse.Namespace) -> int:
                     # record meta
                     try:
                         snippet = entry.encoded_experience.raw_text[:160]
-                    except Exception:
+                    except (AttributeError, TypeError):
+                        # Handle missing or invalid raw_text field
                         snippet = ""
                     mgr.meta_map[comp_id] = {"source": fp, "snippet": snippet}
                     if len(batch_ids) >= args.batch_size:
@@ -247,7 +263,8 @@ def cmd_index_build(args: argparse.Namespace) -> int:
                         batch_ids.clear()
                         batch_vecs.clear()
                 handled = True
-            except Exception:
+            except (FileNotFoundError, OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+                # Expected when file is not an EpisodicMemorySystem format or is corrupted
                 handled = False
 
             if not handled:
@@ -255,7 +272,8 @@ def cmd_index_build(args: argparse.Namespace) -> int:
                 try:
                     with open(fp, "r", encoding="utf-8") as fh:
                         d = json.load(fh)
-                except Exception:
+                except (FileNotFoundError, OSError, json.JSONDecodeError):
+                    # Expected when file cannot be read or is not valid JSON
                     continue
                 entries = []
                 if isinstance(d, list):
@@ -342,7 +360,8 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                         mgr.meta_map = mm.get("map", {})
                     elif isinstance(mm, dict):
                         mgr.meta_map = mm
-            except Exception:
+            except (FileNotFoundError, OSError, json.JSONDecodeError):
+                # Expected when meta file is missing or invalid JSON
                 pass
         elif os.path.isdir(dp):
             meta_guess = args.index + ".meta.json"
@@ -352,14 +371,16 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                         mm = json.load(mfh)
                         if isinstance(mm, dict) and "map" in mm:
                             mgr.meta_map = mm.get("map", {})
-                except Exception:
+                except (FileNotFoundError, OSError, json.JSONDecodeError):
+                    # Expected when meta file is missing or invalid JSON
                     pass
     # Build embedder and compute query vector
     store = None
     if getattr(args, "path", None):
         try:
             store = MemoryStore.load(args.path)
-        except Exception:
+        except (FileNotFoundError, OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+            # Expected when path is not a valid EpisodicMemorySystem file
             store = None
     base = get_embedder(args.embedder, model=args.openai_model) if args.embedder else get_embedder("hash")
     embedder = CachedEmbedder(base, backend_name=args.embedder or "hash", model_id=args.openai_model)
@@ -371,14 +392,16 @@ def cmd_index_search(args: argparse.Namespace) -> int:
     if getattr(args, "max_distance", None) is not None:
         try:
             print("Note: --max-distance is ignored for IP indexes (IndexFlatIP).", file=sys.stderr)
-        except Exception:
+        except OSError:
+            # Handle stderr write errors (e.g., broken pipe)
             pass
     # Threshold filters (assumes IP metric; L2 not used in IndexFlatIP)
     if getattr(args, "min_score", None) is not None:
         try:
             thr = float(args.min_score)
             hits = [(mid, sc) for (mid, sc) in hits if sc >= thr]
-        except Exception:
+        except (ValueError, TypeError):
+            # Handle invalid min_score values
             pass
 
     # Helper: attempt directory-based snippet fallback if meta missing
@@ -409,7 +432,8 @@ def cmd_index_search(args: argparse.Namespace) -> int:
         try:
             with open(found_path, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
-        except Exception:
+        except (FileNotFoundError, OSError, json.JSONDecodeError):
+            # Expected when file cannot be read or is not valid JSON
             return "", ""
         # Try EMS structure first
         try:
@@ -423,7 +447,8 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                 )
                 sn = (raw[:120] + "...") if raw and len(raw) > 120 else (raw or "")
                 return sn, found_path
-        except Exception:
+        except (FileNotFoundError, OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+            # Expected when file is not an EpisodicMemorySystem or is corrupted
             pass
         # Fallback: generic list format
         try:
@@ -433,7 +458,8 @@ def cmd_index_search(args: argparse.Namespace) -> int:
                         raw = e.get("snippet") or e.get("text") or ""
                         sn = (raw[:120] + "...") if raw and len(raw) > 120 else (raw or "")
                         return sn, found_path
-        except Exception:
+        except (AttributeError, TypeError):
+            # Handle cases where data structure is unexpected
             return "", ""
         return "", found_path or ""
     # Assemble output with optional meta snippets
@@ -487,7 +513,8 @@ def cmd_index_search(args: argparse.Namespace) -> int:
             with open(meta_path, "w", encoding="utf-8") as mf:
                 json.dump(payload, mf, ensure_ascii=False, indent=2)
             print(f"Persisted meta to {meta_path}")
-        except Exception as e:
+        except (FileNotFoundError, OSError, json.JSONDecodeError, PermissionError) as e:
+            # Handle file I/O and JSON serialization errors
             print(f"Warning: failed to persist meta: {e}", file=sys.stderr)
     return 0
 
@@ -577,7 +604,8 @@ def main(argv: list[str] | None = None) -> int:
                 "Use 'closed-loop-security' going forward. This alias will be removed in a future release.",
                 file=sys.stderr,
             )
-    except Exception:  # pragma: no cover
+    except (OSError, IndexError, AttributeError):  # pragma: no cover
+        # Handle sys.argv access errors or stderr write failures
         pass
 
     p = build_parser()

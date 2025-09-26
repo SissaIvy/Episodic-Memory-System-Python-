@@ -26,7 +26,7 @@ def default(obj: Any) -> Any:
             pass
         # numpy ndarray
         try:
-            if isinstance(obj, getattr(np, "ndarray", (object,))):
+            if isinstance(obj, np.ndarray):
                 return obj.tolist()
         except Exception:
             pass

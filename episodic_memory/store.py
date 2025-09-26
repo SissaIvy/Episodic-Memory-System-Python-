@@ -218,7 +218,7 @@ class MemoryStore:
         """
         store_dict = self.to_dict()
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(store_dict, f, indent=2, default=json_default)
+            json.dump(store_dict, f, indent=2, default=json_default, ensure_ascii=False)
 
     # --- Mutations ---
     def add_memory(
